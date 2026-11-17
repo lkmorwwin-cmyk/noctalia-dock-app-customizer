@@ -71,7 +71,7 @@ class WatcherTests(unittest.TestCase):
         self.assertEqual(watcher.normalize_id("firefox.desktop"), "firefox.desktop.desktop")
 
     def test_rejects_path_traversal(self):
-        for value in ("../../outside", "../bad.desktop", "bad\name", "bad\x00name"):
+        for value in ("../../outside", "../bad.desktop", "bad\\name", "bad\x00name"):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 watcher.normalize_id(value)
 
