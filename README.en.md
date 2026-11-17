@@ -57,7 +57,15 @@ The utility uses standard **Desktop Actions**. It creates user-level launcher co
 > [!NOTE]
 > This is an independent community utility, not an official Noctalia plugin and not a modification of Noctalia's source code.
 
-## 🧪 Tests\n\nRun the test suite from the repository root:\n\n```bash\npython3 -m unittest discover -s tests -v\n```\n\n## 🔍 Service and logs
+## 🧪 Tests
+
+Run the test suite from the repository root:
+
+```bash
+python3 -m unittest discover -s tests -v
+```
+
+## 🔍 Service and logs
 
 ```bash
 systemctl --user status noctalia-dock-watch.service
