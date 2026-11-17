@@ -28,6 +28,12 @@ The utility integrates through standard Linux **Desktop Actions**. A user-level 
 > [!NOTE]
 > This is an independent community utility, not an official Noctalia plugin. It does not patch or replace Noctalia.
 
+## ⚡ Resource usage
+
+The background watcher is designed to have a small idle footprint. In a CachyOS measurement on November 17, 2026, the systemd service used about **7.8 MiB RAM**, with **one task/thread** and about **0.48 seconds of cumulative CPU time** at the time of sampling.
+
+This is a single snapshot shortly after startup, not a long-duration benchmark or a guarantee for every system. Actual usage varies with the environment and pinned-app changes. See the [Russian](README.ru.md#-производительность-и-нагрузка) or [English](README.en.md#-performance-and-resource-usage) documentation for details and the verification notes.
+
 ## 🚀 Quick start
 
 **Requirements:** Linux, Noctalia, Python 3.11+, systemd user session, and Zenity for graphical dialogs.
@@ -80,7 +86,8 @@ The watcher log rotates at 256 KiB and keeps one previous copy.
 
 - System desktop-entry files are not modified.
 - The watcher records launcher copies it creates in a manifest.
-- Unpin cleanup is restricted to files recorded in that manifest.
+- Unpin cleanup is restricted to recognized launcher copies owned by this utility.
+- Replaced, unrecognized, or symlink launcher paths are preserved.
 - Existing user-level desktop entries are not deleted by the watcher.
 
 ---
