@@ -213,6 +213,7 @@ def main() -> int:
         filename = filename_for(app_id)
         path = desktop_path(filename)
         if command == "install":
+            save_baseline(path, filename)
             add_actions(filename)
             return 0
         if command == "uninstall":
