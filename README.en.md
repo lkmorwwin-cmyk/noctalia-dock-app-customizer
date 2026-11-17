@@ -141,18 +141,18 @@ Security-focused tests cover, among other things:
 
 The watcher is designed for continuous background operation with a small resource footprint. It reacts immediately to Noctalia settings changes and checks pinned apps' source launchers for package updates every 60 seconds. It does not rewrite files when no source changes are detected.
 
-**Measured snapshot on CachyOS · November 17, 2026**
+**CachyOS measurements · November 17, 2026**
 
-| Metric | Result |
-|:--|--:|
-| systemd service memory | **≈ 7.8 MiB** |
-| service tasks/threads | **1** |
-| first cumulative CPU sample | **0.480332 s** |
-| second cumulative CPU sample (20 minutes later) | **0.489231 s** |
-| CPU time during the 20-minute interval | **0.008899 s (8.9 ms)** |
-| average use of one logical CPU core during the interval | **≈ 0.00074%** |
+| Metric | First sample | 20 minutes later | About one more hour later |
+|:--|--:|--:|--:|
+| systemd service memory | 7.82 MiB | 7.82 MiB | **9.63 MiB** |
+| service tasks/threads | 1 | 1 | **1** |
+| cumulative CPU time | 0.480332 s | 0.489231 s | **0.543459 s** |
+| CPU time during interval | — | 8.899 ms | **54.228 ms** |
 
-The two samples were taken about 20 minutes apart: memory remained at 7.82 MiB and the task count remained at 1. The service accumulated 8.899 ms of CPU time during that interval, equivalent to approximately 0.00074% average use of one logical CPU core.
+During the additional interval of approximately one hour, the service accumulated about 54.2 ms of CPU time — approximately **0.0015% average use of one logical CPU core**. Memory in the latest sample was about 9.63 MiB, and the task count remained 1.
+
+The first interval (20 minutes) accounted for 8.899 ms of CPU time, or about 0.00074% of one logical CPU core. CPU time values are cumulative; the difference between samples, not the absolute value, is what indicates usage during an interval.
 
 > [!IMPORTANT]
 > This is a short observation on one system, not a long-duration benchmark or a guarantee for every system. The average does not rule out brief spikes. Actual usage depends on the environment, number of pinned apps, and how often settings change.
