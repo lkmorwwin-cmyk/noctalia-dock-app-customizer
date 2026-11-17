@@ -368,11 +368,11 @@ def sync_managed_launcher(source: Path, target: Path, filename: str) -> bool:
             if output:
                 output.append("")
             output.extend(lines)
-        new_text = "\\n".join(output).rstrip() + "\\n"
+        new_text = "\n".join(output).rstrip() + "\n"
         if new_text != target_text:
             fd, temporary = tempfile.mkstemp(prefix="." + filename + ".", dir=target.parent)
             try:
-                with os.fdopen(fd, "w", encoding="utf-8", newline="\\n") as stream:
+                with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as stream:
                     stream.write(new_text)
                     stream.flush()
                     os.fsync(stream.fileno())
