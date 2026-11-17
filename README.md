@@ -96,9 +96,9 @@ See [test documentation](tests/README.md) for the available checks and CI detail
 
 ## Resource usage
 
-A CachyOS snapshot taken on November 17, 2026 showed approximately **7.8 MiB RAM**, **one task/thread**, and **0.48 seconds of cumulative CPU time** for the service.
+Two CachyOS samples taken about 20 minutes apart on November 17, 2026 showed stable memory (**7.82 MiB**) and task count (**1**). Cumulative CPU time increased from **0.480332 s** to **0.489231 s**: just **8.899 ms over 20 minutes**, or approximately **0.00074% average use of one logical CPU core**.
 
-This was a single sample shortly after startup, not a long-duration benchmark or a universal guarantee. Actual usage varies by system and activity. Detailed notes and a command for checking your own system are in the [Russian](README.ru.md#-производительность-и-нагрузка) and [English](README.en.md#-performance-and-resource-usage) guides.
+This is a short observation on one system, not a long-duration benchmark or a universal guarantee. The average does not rule out brief spikes; actual usage varies by system and activity. Detailed notes and a command for checking your own system are in the [Russian](README.ru.md#-производительность-и-нагрузка) and [English](README.en.md#-performance-and-resource-usage) guides.
 
 ## Service and logs
 
