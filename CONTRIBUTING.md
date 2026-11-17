@@ -34,6 +34,20 @@ Please check whether the issue has already been reported. Include the details be
 8. When changing package synchronization, preserve user-customized names, icons, and Noctalia Desktop Actions.
 9. Update all affected documentation, including Russian and English guides, when behavior or setup changes.
 10. Add or update tests for behavior changes where practical.
+11. Keep the update instructions in the main, Russian, and English READMEs accurate whenever the installer, installed paths, or service lifecycle changes. Keep release/version references synchronized when publishing a new version.
+
+## Release and update documentation
+
+The project is installed from a source checkout. The documented update flow is:
+
+```bash
+cd ~/noctalia-dock-app-customizer
+git pull --ff-only
+bash scripts/install.sh
+systemctl --user restart noctalia-dock-watch.service
+```
+
+When changing this procedure, update the top-level README and both localized guides. When preparing a release, update the current-version references and add release notes to `CHANGELOG.md`.
 
 ## Pull requests
 
