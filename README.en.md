@@ -71,7 +71,8 @@ The utility uses standard **Desktop Actions**. It creates user-level launcher co
 2. Locates the corresponding system `.desktop` launchers, including Flatpak-exported entries through validated symlinks.
 3. Creates user-level copies in `~/.local/share/applications`.
 4. Adds actions for changing the icon, renaming, and resetting.
-5. A background service tracks changes to the pinned-app list and periodically checks source launchers for package updates.\n6. When a package updates, the managed copy receives new source fields while preserving the user's custom name, icon, and Desktop Actions.
+5. A background service tracks changes to the pinned-app list and checks source launchers for package updates every 60 seconds.
+6. When a package updates, the managed copy receives new source fields while preserving the user's custom name, icon, and Desktop Actions.
 
 > [!NOTE]
 > This is an independent community utility — not an official Noctalia plugin and not a modification of Noctalia's source code.
@@ -167,7 +168,8 @@ The watcher log rotates at 256 KiB and keeps one previous copy.
 - The Dock may take a moment to refresh after a launcher changes.
 - Flatpak, Snap, and non-standard installation methods need separate verification.
 - Compatibility with every Noctalia version and Linux distribution is not yet guaranteed.
-- Flatpak-exported launchers may be symlinks: the watcher accepts only links from the standard Flatpak exports directory whose targets remain inside that installation's `app` directory.\n- Managed copies periodically receive updated package source fields while preserving custom names and icons saved through the Customizer. Verified with Bottles (Flatpak), Happ (AUR/yay), and Termius (AUR package with a user-level launcher).
+- Flatpak-exported launchers may be symlinks: the watcher accepts only links from the standard Flatpak exports directory whose targets remain inside that installation's `app` directory.
+- Managed copies periodically receive updated package source fields while preserving custom names and icons saved through the Customizer. Verified with Bottles (Flatpak), Happ (AUR/yay), and Termius (AUR package with a user-level launcher).
 - If an application already has a user-level desktop entry, the utility adds actions to it. That file is not treated as a watcher-created copy and is not automatically removed.
 
 ## 🗺️ Roadmap
