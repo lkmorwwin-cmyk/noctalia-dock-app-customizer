@@ -46,7 +46,9 @@ Restore the original appearance.
 </tr>
 </table>
 
-The utility integrates through standard Linux **Desktop Actions**. A lightweight user-level watcher keeps launcher entries synchronized with the apps pinned to the Dock.
+The utility integrates through standard Linux **Desktop Actions**. A lightweight user-level watcher keeps launcher entries synchronized with the apps pinned to the Dock and refreshes managed copies when package launchers change.
+
+![Noctalia Dock context menu showing Change icon, Rename, and Reset appearance](noctalia-dock-context-menu.png)
 
 > [!NOTE]
 > This is an independent community utility — not an official Noctalia plugin. It does not patch or replace Noctalia.
@@ -86,6 +88,8 @@ bash scripts/uninstall.sh
 
 ## Verification
 
+**21 automated tests** cover launcher editing, Flatpak export symlinks, package-source synchronization, user overrides, and safe cleanup. CI validates Python 3.11 and 3.12.
+
 Run the test suite from the repository root:
 
 ```bash
@@ -116,7 +120,9 @@ The watcher log rotates at 256 KiB and keeps one previous copy.
 - Launcher copies created by the watcher are tracked in a manifest.
 - Cleanup is limited to recognized launcher copies owned by this utility.
 - Replaced, unrecognized, and symlink launcher paths are preserved.
+- Flatpak export symlinks are accepted only when they resolve inside the matching installation's `app` directory.
 - Existing user-level desktop entries are not deleted by the watcher.
+- Managed launcher copies are checked for source updates every 60 seconds; custom names, icons, and Noctalia actions are retained.
 
 ---
 
