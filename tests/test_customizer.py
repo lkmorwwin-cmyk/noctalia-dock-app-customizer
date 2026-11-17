@@ -68,7 +68,7 @@ class WatcherTests(unittest.TestCase):
             target = apps / "org.example.App.desktop"
             target.write_text("[Desktop Entry]\nName=Example\n", encoding="utf-8")
             with patch.object(watcher, "DATA_HOME", root), patch.dict("os.environ", {"XDG_DATA_DIRS": directory}):
-                self.assertEqual(watcher.find_desktop("org.example.App"), target)
+                self.assertEqual(watcher.find_desktop("org.example.App.desktop"), target)
 
 
 if __name__ == "__main__":
