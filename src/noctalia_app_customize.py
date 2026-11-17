@@ -46,13 +46,13 @@ def atomic_write(path: Path, content: str) -> None:
 
 def filename_for(app_id: str) -> str:
     if not app_id or app_id in {".", ".."} or "/" in app_id or "\\" in app_id:
-        raise ValueError("Invalid desktop file ID")
+        raise ValueError(tr("Invalid desktop file ID", "Недопустимый идентификатор desktop-файла"))
     return app_id if app_id.endswith(".desktop") else app_id + ".desktop"
 
 def desktop_path(app_id: str) -> Path:
     path = APPS / filename_for(app_id)
     if not path.is_file():
-        raise FileNotFoundError("User desktop file not found: " + str(path))
+        raise FileNotFoundError(tr("User desktop file not found: ", "Пользовательский desktop-файл не найден: ") + str(path))
     return path
 
 def metadata_path(app_id: str) -> Path:
@@ -135,7 +135,7 @@ def add_actions(app_id: str) -> None:
     lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
     start = next((i for i, line in enumerate(lines) if line.strip() == "[Desktop Entry]"), None)
     if start is None:
-        raise ValueError("Missing [Desktop Entry] section")
+        raise ValueError(tr("Missing [Desktop Entry] section", "Отсутствует секция [Desktop Entry]"))
     end = next((i for i in range(start + 1, len(lines)) if lines[i].strip().startswith("[")), len(lines))
     action_index = next((i for i in range(start + 1, end) if lines[i].startswith("Actions=")), None)
     current = [x for x in lines[action_index].split("=", 1)[1].split(";") if x] if action_index is not None else []
