@@ -26,7 +26,8 @@
 | ↩️ **Reset appearance** | Restore the original name and icon |
 | ⚙️ **Automatic tracking** | Watch the pinned application list |
 | 🧹 **Careful cleanup** | Remove only launcher copies created by this utility |
-| 🌐 **Bilingual interface** | Automatically select Russian or English from the desktop locale |\n| 🔁 **Background operation** | Run as a systemd user service |
+| 🌐 **Bilingual interface** | Automatically select Russian or English from the desktop locale |
+| 🔁 **Background operation** | Run as a systemd user service |
 
 ## 🚀 Quick installation
 
@@ -44,7 +45,11 @@ To uninstall:
 bash scripts/uninstall.sh
 ```
 
-## 🌐 Interface language\n\nThe context-menu actions, dialogs, and notifications automatically follow the desktop session locale: `ru` selects Russian, while all other locales use English. No separate language package or manual setting is required.\n\n## 🧩 How it works
+## 🌐 Interface language
+
+The context-menu actions, dialogs, and notifications automatically follow the desktop session locale: `ru` selects Russian, while all other locales use English. No separate language package or manual setting is required.
+
+## 🧩 How it works
 
 The utility uses standard **Desktop Actions**. It creates user-level launcher copies and adds actions that Noctalia Dock can display in its context menu.
 
@@ -96,7 +101,8 @@ The watcher log rotates at 256 KiB and keeps one previous copy.
 
 - [x] Move the watcher and customizer into standalone source files.
 - [x] Add installation and uninstallation scripts.
-- [x] Add automated tests.\n- [x] Add automatic Russian and English interface selection.
+- [x] Add automated tests.
+- [x] Add automatic Russian and English interface selection.
 - [ ] Verify Flatpak/Snap support.
 - [ ] Test more distributions and Noctalia versions.
 - [ ] Publish the first stable release.
