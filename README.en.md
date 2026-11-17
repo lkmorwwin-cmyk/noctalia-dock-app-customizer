@@ -48,15 +48,17 @@
 
 ## 🚀 Installation and removal
 
-Install from the source repository using the installer script.
+The installer checks dependencies and automatically installs missing Python 3.11+ and Zenity through a supported package manager: pacman, APT, DNF, or Zypper. It requests administrator authentication through `sudo` when system packages need to be installed.
 
-**Requirements:** Linux, Noctalia, Python 3.11+, a systemd user session. Zenity is required for graphical dialogs.
+**Requirements:** Linux, Noctalia, and a running systemd user session. The installer checks for Python 3.11+ and Zenity and installs them automatically when missing.
 
 ```bash
 git clone https://github.com/lkmorwwin-cmyk/noctalia-dock-app-customizer.git
 cd noctalia-dock-app-customizer
 bash scripts/install.sh
 ```
+
+Noctalia and systemd are not installed by the script; they must already be available. If the package manager is unsupported or cannot provide Python 3.11+, the installer stops and explains what must be fixed manually.
 
 To uninstall:
 
