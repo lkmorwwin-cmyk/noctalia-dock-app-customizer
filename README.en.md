@@ -10,7 +10,7 @@
 ![Noctalia](https://img.shields.io/badge/desktop-Noctalia-7c3aed?style=flat-square)
 ![Python](https://img.shields.io/badge/Python-3.11%2B-3776ab?style=flat-square&logo=python&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-2563eb?style=flat-square)
-![Status](https://img.shields.io/badge/status-public%20testing-f59e0b?style=flat-square)
+![Version](https://img.shields.io/badge/version-1.0.0%20stable-2ea44f?style=flat-square)
 
 *A small, focused utility for customizing application icons and names in Noctalia Dock.*
 
@@ -29,7 +29,7 @@
 - [Service and logs](#-service-and-logs)
 - [Safety](#-safety)
 - [Limitations](#️-limitations-and-compatibility)
-- [Roadmap](#-roadmap)
+- [Project status](#-project-status)
 
 ## ✨ Features
 
@@ -47,6 +47,8 @@
 ![Noctalia Dock context menu showing Change icon, Rename, and Reset appearance](noctalia-dock-context-menu.png)
 
 ## 🚀 Installation and removal
+
+The currently supported installation method is the installer script from the source repository. An AUR/yay package is being considered separately; Flatpak packaging is not planned because the utility needs safe access to host desktop files and the user's systemd service.
 
 **Requirements:** Linux, Noctalia, Python 3.11+, a systemd user session. Zenity is required for graphical dialogs.
 
@@ -171,28 +173,17 @@ The watcher log rotates at 256 KiB and keeps one previous copy.
 - Menu actions depend on the Dock supporting Desktop Actions.
 - This is not a universal context-menu extension API.
 - The Dock may take a moment to refresh after a launcher changes.
-- Snap and non-standard installation methods still need separate verification. Snap CLI and snapd were not installed on the tested system.
-- Compatibility with every Noctalia version and Linux distribution is not yet guaranteed.
 - Flatpak-exported launchers may be symlinks: the watcher accepts only links from the standard Flatpak exports directory whose targets remain inside that installation's `app` directory.
 - Managed copies periodically receive updated package source fields while preserving custom names and icons saved through the Customizer. Launcher discovery and managed-copy creation were verified with Bottles (Flatpak) and Happ (AUR/yay). User-level launcher priority was verified with Termius. Actual synchronization during a real package upgrade is covered by automated tests, but has not yet been observed during an installed-app upgrade.
 - If an application already has a user-level desktop entry, the utility adds actions to it. That file is not treated as a watcher-created copy and is not automatically removed.
 
-## 🗺️ Roadmap
+## 🚀 Project status
 
-- [x] Split the watcher and customizer into standalone source files.
-- [x] Add installation and uninstallation scripts.
-- [x] Add automated tests.
-- [x] Add automatic Russian and English interface selection.
-- [x] Harden manifest validation and managed-launcher cleanup.
-- [x] Document security checks and measured resource usage.
-- [x] Verify launcher discovery for Bottles (Flatpak) and Happ (AUR via yay), and user-launcher priority for Termius.
-- [ ] Verify apps installed through Snap.
-- [ ] Test more distributions and Noctalia versions.
-- [ ] Publish the first stable release.
+**Version 1.0.0 — first stable release.** Core features are implemented, the automated test suite passes, and the installer and systemd user service have been verified. See [CHANGELOG.md](CHANGELOG.md) for release notes.
 
 ## 🤝 Contributing
 
-Bug reports and suggestions are welcome. Before opening an Issue, check existing reports and include your distribution, Noctalia version, application installation method, launcher ID, and a relevant log excerpt with personal data removed.
+Bug reports and suggestions are welcome. Before opening an Issue, check existing reports and include the application installation method, launcher ID, and a relevant log excerpt with personal data removed.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines and pull request expectations.
 
