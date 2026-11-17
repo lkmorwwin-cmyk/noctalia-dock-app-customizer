@@ -18,7 +18,7 @@ Please check whether the issue has already been reported. Include the details be
 |:--|:--|
 | Linux distribution | Name and version |
 | Noctalia version | Exact version if possible |
-| Application source | Native package, Flatpak, Snap, etc. |
+| Application source | Native package, Flatpak, etc. |
 | Desktop-file ID and path | The affected `.desktop` entry |
 | Logs | Only the relevant excerpt; remove usernames and other personal information |
 
@@ -58,7 +58,7 @@ bash -n scripts/install.sh
 bash -n scripts/uninstall.sh
 ```
 
-CI currently tests Python 3.11 and 3.12. Runtime launcher discovery has been checked with Bottles (Flatpak) and Happ (AUR via yay); Snap remains unverified because Snap was not installed in the test environment.
+CI tests Python 3.11 and 3.12. Runtime launcher discovery has been checked with Bottles (Flatpak) and Happ (AUR via yay); user-level launcher priority was checked with Termius.
 
 See [tests/README.md](tests/README.md) for more information about the 21-test suite.
 
