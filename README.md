@@ -10,7 +10,7 @@
 ![Noctalia](https://img.shields.io/badge/desktop-Noctalia-7c3aed?style=flat-square)
 ![Python](https://img.shields.io/badge/Python-3.11%2B-3776ab?style=flat-square&logo=python&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-2563eb?style=flat-square)
-![Status](https://img.shields.io/badge/status-public%20testing-f59e0b?style=flat-square)
+![Version](https://img.shields.io/badge/version-1.0.0%20stable-2ea44f?style=flat-square)
 
 *A small, focused utility for customizing application icons and names in Noctalia Dock.*
 
@@ -70,6 +70,8 @@ bash scripts/uninstall.sh
 ```
 
 ## Documentation
+
+**Current version: 1.0.0 — first stable release.** See [CHANGELOG](CHANGELOG.md) for release notes.
 
 | Language | Guide |
 |:--|:--|
