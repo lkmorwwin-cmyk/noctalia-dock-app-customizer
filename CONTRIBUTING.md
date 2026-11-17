@@ -29,8 +29,11 @@ Please check whether the issue has already been reported. Include the details be
 3. Never overwrite or delete pre-existing user-managed launchers.
 4. Restrict cleanup to files explicitly tracked as created by this project.
 5. Avoid adding dependencies unless they are necessary and documented.
-6. Update both Russian and English documentation when behavior or setup changes.
-7. Add or update tests for behavior changes where practical.
+6. Preserve the distinction between watcher-managed launchers and pre-existing user-level desktop entries.
+7. Keep Flatpak symlink handling restricted to validated export paths; never follow arbitrary launcher symlinks.
+8. When changing package synchronization, preserve user-customized names, icons, and Noctalia Desktop Actions.
+9. Update all affected documentation, including Russian and English guides, when behavior or setup changes.
+10. Add or update tests for behavior changes where practical.
 
 ## Pull requests
 
@@ -55,7 +58,9 @@ bash -n scripts/install.sh
 bash -n scripts/uninstall.sh
 ```
 
-See [tests/README.md](tests/README.md) for more information about the test suite.
+CI currently tests Python 3.11 and 3.12. Runtime launcher discovery has been checked with Bottles (Flatpak) and Happ (AUR via yay); Snap remains unverified because Snap was not installed in the test environment.
+
+See [tests/README.md](tests/README.md) for more information about the 21-test suite.
 
 ---
 
