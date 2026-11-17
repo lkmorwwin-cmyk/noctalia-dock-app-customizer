@@ -58,7 +58,15 @@ bash scripts/uninstall.sh
 | `systemd/` | User service unit |
 | `scripts/` | Installer and uninstaller |
 
-## 🧪 Tests\n\nRun the standard-library test suite from the repository root:\n\n```bash\npython3 -m unittest discover -s tests -v\n```\n\n## 🔍 Service and logs
+## 🧪 Tests
+
+Run the standard-library test suite from the repository root:
+
+```bash
+python3 -m unittest discover -s tests -v
+```
+
+## 🔍 Service and logs
 
 ```bash
 systemctl --user status noctalia-dock-watch.service
