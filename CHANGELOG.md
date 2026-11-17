@@ -4,6 +4,10 @@ All notable changes to Noctalia Dock App Customizer are documented here.
 
 ## [1.1.0] — 2026-11-17
 
+### Documentation
+- Add source-based update instructions, including reinstalling user-level files and restarting the watcher service.
+- Update documentation version references to 1.1.0.
+
 ### Installer
 - Automatically detect pacman, APT, DNF, or Zypper and install missing Python 3.11+ and Zenity dependencies.
 - Verify the Python version and the availability of a running systemd user session before installing the utility.
