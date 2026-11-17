@@ -10,7 +10,7 @@
 ![Noctalia](https://img.shields.io/badge/desktop-Noctalia-7c3aed?style=flat-square)
 ![Python](https://img.shields.io/badge/Python-3.11%2B-3776ab?style=flat-square&logo=python&logoColor=white)
 ![Лицензия](https://img.shields.io/badge/license-MIT-2563eb?style=flat-square)
-![Версия](https://img.shields.io/badge/version-1.0.0%20stable-2ea44f?style=flat-square)
+![Версия](https://img.shields.io/badge/version-1.1.0%20stable-2ea44f?style=flat-square)
 
 *Небольшая утилита для настройки иконок и имён приложений в Noctalia Dock.*
 
@@ -22,6 +22,7 @@
 
 - [Возможности](#-возможности)
 - [Установка и удаление](#-установка-и-удаление)
+- [Обновление](#-обновление)
 - [Язык интерфейса](#-язык-интерфейса)
 - [Как это работает](#-как-это-работает)
 - [Тесты и проверка](#-тесты-и-проверка)
@@ -65,6 +66,25 @@ bash scripts/install.sh
 ```bash
 bash scripts/uninstall.sh
 ```
+
+## 🔄 Обновление
+
+Когда выходит новая версия, обновите исходный репозиторий и переустановите файлы утилиты:
+
+```bash
+cd ~/noctalia-dock-app-customizer
+git pull --ff-only
+bash scripts/install.sh
+systemctl --user restart noctalia-dock-watch.service
+```
+
+- `git pull --ff-only` загружает обновления без создания merge-коммита. Если Git сообщит о локальных изменениях или конфликте, не используйте принудительный сброс — сначала разберитесь с этими изменениями.
+- `scripts/install.sh` обновляет установленные скрипты и пользовательский unit-файл systemd.
+- Перезапуск службы запускает watcher уже с новым кодом.
+
+Пользовательские настройки Noctalia, состояние Customizer и пользовательские иконки/имена приложений при штатном обновлении не удаляются. Если репозиторий был клонирован не в `~/noctalia-dock-app-customizer`, перейдите в фактический каталог проекта.
+
+Новые версии и список изменений: [GitHub Releases](https://github.com/lkmorwwin-cmyk/noctalia-dock-app-customizer/releases) и [CHANGELOG.md](CHANGELOG.md).
 
 ## 🌐 Язык интерфейса
 
@@ -183,7 +203,7 @@ tail -f ~/.local/state/noctalia-dock-watch.log
 
 ## 🚀 Статус проекта
 
-**Версия 1.0.0 — первый стабильный релиз.** Основные функции реализованы, автоматические тесты проходят, а установщик и пользовательская systemd-служба проверены. История изменений: [CHANGELOG.md](CHANGELOG.md).
+**Текущая версия: 1.1.0.** Первый стабильный релиз — 1.0.0. История выпусков: [GitHub Releases](https://github.com/lkmorwwin-cmyk/noctalia-dock-app-customizer/releases). Основные функции реализованы, автоматические тесты проходят, а установщик и пользовательская systemd-служба проверены. История изменений: [CHANGELOG.md](CHANGELOG.md).
 
 ## 🤝 Участие в проекте
 
