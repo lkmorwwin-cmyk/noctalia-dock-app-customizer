@@ -2,6 +2,14 @@
 
 All notable changes to Noctalia Dock App Customizer are documented here.
 
+## [Unreleased]
+
+### Installer
+- Automatically detect pacman, APT, DNF, or Zypper and install missing Python 3.11+ and Zenity dependencies.
+- Verify the Python version and the availability of a running systemd user session before installing the utility.
+- Keep Noctalia and systemd as pre-existing environment requirements; they are not installed by the script.
+
+
 ## [1.0.0] — 2026-11-17
 
 First stable release.
