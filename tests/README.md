@@ -50,7 +50,7 @@ bash -n scripts/uninstall.sh
 
 The current suite contains **21 tests**. The local verification on CachyOS completed successfully on November 17, 2026: all 21 tests passed, Python compilation succeeded, both shell scripts passed syntax checks, and the user service restarted successfully.
 
-Runtime launcher discovery was checked with Bottles installed through Flatpak and Happ installed through AUR/yay. Termius confirmed that an existing user-level launcher takes priority over a package launcher. Snap was not tested because Snap CLI and snapd were not installed.
+Runtime launcher discovery was checked with Bottles installed through Flatpak and Happ installed through AUR/yay. Termius confirmed that an existing user-level launcher takes priority over a package launcher.
 
 ## Continuous integration
 
