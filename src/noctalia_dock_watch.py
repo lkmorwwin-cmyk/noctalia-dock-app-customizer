@@ -26,6 +26,7 @@ MANIFEST = STATE_HOME / "noctalia-dock-managed.json"
 TRACKED = STATE_HOME / "noctalia-dock-actions.json"
 MAX_LOG = 256 * 1024
 POLL_SECONDS = 3
+SYNC_INTERVAL_SECONDS = 60
 OWN_ACTIONS = ("NoctaliaChangeIcon", "NoctaliaRename", "NoctaliaReset")
 
 
@@ -254,6 +255,145 @@ def remove_managed_file(filename: str, managed: set[str]) -> None:
     save_manifest(managed)
 
 
+
+def _desktop_sections(content: str) -> tuple[list[str], dict[str, list[str]]]:
+    """Split a desktop file into its preamble and named sections."""
+    preamble: list[str] = []
+    sections: dict[str, list[str]] = {}
+    current: str | None = None
+    for line in content.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("[") and stripped.endswith("]"):
+            current = stripped
+            sections.setdefault(current, []).append(line)
+        elif current is None:
+            preamble.append(line)
+        else:
+            sections[current].append(line)
+    return preamble, sections
+
+
+def _main_values(lines: list[str]) -> dict[str, str]:
+    values: dict[str, str] = {}
+    inside = False
+    for line in lines:
+        item = line.strip()
+        if item.startswith("[") and item.endswith("]"):
+            inside = item == "[Desktop Entry]"
+        elif inside and "=" in item and not item.startswith("#"):
+            key, value = item.split("=", 1)
+            values[key] = value
+    return values
+
+
+def _set_main_value(lines: list[str], key: str, value: str) -> list[str]:
+    """Set Name or Icon in [Desktop Entry], retaining unrelated source keys."""
+    output: list[str] = []
+    inside = False
+    inserted = False
+    replacement = ["Name=" + value, "Name[ru]=" + value] if key == "Name" else ["Icon=" + value]
+    for line in lines:
+        item = line.strip()
+        if item.startswith("[") and item.endswith("]"):
+            if inside and not inserted:
+                output.extend(replacement)
+                inserted = True
+            inside = item == "[Desktop Entry]"
+            output.append(line)
+            continue
+        if inside and "=" in item and not item.startswith("#"):
+            current_key = item.split("=", 1)[0]
+            matches = current_key == key or (key == "Name" and current_key.startswith("Name["))
+            if matches:
+                if not inserted:
+                    output.extend(replacement)
+                    inserted = True
+                continue
+        output.append(line)
+    if inside and not inserted:
+        output.extend(replacement)
+    return output
+
+
+def sync_managed_launcher(source: Path, target: Path, filename: str) -> bool:
+    """Refresh package fields while preserving Noctalia actions and user appearance."""
+    if not valid_filename(filename) or target.is_symlink() or not has_our_actions(target):
+        return False
+    try:
+        source_text = source.read_text(encoding="utf-8", errors="replace")
+        target_text = target.read_text(encoding="utf-8", errors="replace")
+        source_preamble, source_sections = _desktop_sections(source_text)
+        _, target_sections = _desktop_sections(target_text)
+        source_main = source_sections.get("[Desktop Entry]")
+        target_main = target_sections.get("[Desktop Entry]")
+        if not source_main or not target_main:
+            log("Skipping source sync without [Desktop Entry]: " + filename)
+            return False
+
+        meta = metadata_path(filename)
+        metadata: dict = {}
+        if meta.exists():
+            if meta.is_symlink() or not meta.is_file():
+                log("Skipping source sync with unsafe metadata: " + filename)
+                return False
+            loaded = json.loads(meta.read_text(encoding="utf-8"))
+            if not isinstance(loaded, dict):
+                log("Skipping source sync with invalid metadata: " + filename)
+                return False
+            metadata = loaded
+
+        current_values = _main_values(target_main)
+        source_values = _main_values(source_main)
+        old_name, old_icon = metadata.get("Name"), metadata.get("Icon")
+        current_name, current_icon = current_values.get("Name"), current_values.get("Icon")
+        custom_icon = metadata.get("CustomIcon", "")
+        name_override = current_name if isinstance(old_name, str) and current_name != old_name else None
+        icon_override = current_icon if isinstance(old_icon, str) and (custom_icon or current_icon != old_icon) else None
+
+        merged_main = list(source_main)
+        if name_override is not None:
+            merged_main = _set_main_value(merged_main, "Name", name_override)
+        if icon_override is not None:
+            merged_main = _set_main_value(merged_main, "Icon", icon_override)
+
+        merged_sections = dict(source_sections)
+        merged_sections["[Desktop Entry]"] = merged_main
+        # Keep Noctalia actions and other target-only sections.
+        for section, lines in target_sections.items():
+            if section.startswith("[Desktop Action Noctalia") or section not in merged_sections:
+                merged_sections[section] = lines
+
+        output = list(source_preamble)
+        for section, lines in merged_sections.items():
+            if output:
+                output.append("")
+            output.extend(lines)
+        new_text = "\\n".join(output).rstrip() + "\\n"
+        if new_text != target_text:
+            fd, temporary = tempfile.mkstemp(prefix="." + filename + ".", dir=target.parent)
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8", newline="\\n") as stream:
+                    stream.write(new_text)
+                    stream.flush()
+                    os.fsync(stream.fileno())
+                os.chmod(temporary, target.stat().st_mode & 0o777)
+                os.replace(temporary, target)
+            except Exception:
+                Path(temporary).unlink(missing_ok=True)
+                raise
+            log("Updated managed desktop entry from package source: " + filename)
+
+        if metadata:
+            updated_metadata = dict(metadata)
+            updated_metadata["Name"] = source_values.get("Name", "")
+            updated_metadata["Icon"] = source_values.get("Icon", "")
+            if updated_metadata != metadata:
+                atomic_json(meta, updated_metadata)
+        return new_text != target_text
+    except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+        log("Could not sync managed desktop entry " + filename + ": " + str(exc))
+        return False
+
 def process_pinned(managed: set[str]) -> set[str]:
     if not CONFIG.is_file():
         log("No Noctalia settings file at " + str(CONFIG))
@@ -302,6 +442,10 @@ def process_pinned(managed: set[str]) -> set[str]:
         elif not target.is_file():
             log("Refusing to customize non-regular path: " + filename)
             continue
+        elif filename in managed and has_our_actions(target):
+            source = find_desktop(filename)
+            if source is not None:
+                sync_managed_launcher(source, target, filename)
         try:
             result = subprocess.run(
                 [sys.executable, str(CUSTOMIZER), "install", filename],
@@ -341,12 +485,15 @@ def main() -> int:
 
     log("Watcher started")
     previous_stamp = object()
+    last_sync = 0.0
     while True:
         try:
             stamp = CONFIG.stat().st_mtime_ns if CONFIG.exists() else None
-            if stamp != previous_stamp:
+            now = time.monotonic()
+            if stamp != previous_stamp or now - last_sync >= SYNC_INTERVAL_SECONDS:
                 managed = process_pinned(managed)
                 previous_stamp = stamp
+                last_sync = now
         except Exception as exc:
             log("Watcher error: " + str(exc))
         time.sleep(POLL_SECONDS)
