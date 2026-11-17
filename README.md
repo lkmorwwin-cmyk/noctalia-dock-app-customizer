@@ -35,13 +35,13 @@ The utility integrates through standard Linux **Desktop Actions**. A user-level 
 ```bash
 git clone https://github.com/lkmorwwin-cmyk/noctalia-dock-app-customizer.git
 cd noctalia-dock-app-customizer
-./scripts/install.sh
+bash scripts/install.sh
 ```
 
 To uninstall:
 
 ```bash
-./scripts/uninstall.sh
+bash scripts/uninstall.sh
 ```
 
 ## 🌍 Documentation
@@ -58,7 +58,7 @@ To uninstall:
 | `systemd/` | User service unit |
 | `scripts/` | Installer and uninstaller |
 
-## 🔍 Service and logs
+## 🧪 Tests\n\nRun the standard-library test suite from the repository root:\n\n```bash\npython3 -m unittest discover -s tests -v\n```\n\n## 🔍 Service and logs
 
 ```bash
 systemctl --user status noctalia-dock-watch.service
