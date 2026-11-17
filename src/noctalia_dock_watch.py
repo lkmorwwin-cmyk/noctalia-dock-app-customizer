@@ -394,6 +394,18 @@ def sync_managed_launcher(source: Path, target: Path, filename: str) -> bool:
         log("Could not sync managed desktop entry " + filename + ": " + str(exc))
         return False
 
+
+def sync_managed_sources(managed: set[str]) -> None:
+    """Periodically refresh only managed launchers without rerunning the customizer."""
+    for filename in sorted(managed):
+        target = LOCAL_APPS / filename
+        if target.is_symlink() or not target.is_file() or not has_our_actions(target):
+            continue
+        source = find_desktop(filename)
+        if source is not None:
+            sync_managed_launcher(source, target, filename)
+
+
 def process_pinned(managed: set[str]) -> set[str]:
     if not CONFIG.is_file():
         log("No Noctalia settings file at " + str(CONFIG))
@@ -490,9 +502,12 @@ def main() -> int:
         try:
             stamp = CONFIG.stat().st_mtime_ns if CONFIG.exists() else None
             now = time.monotonic()
-            if stamp != previous_stamp or now - last_sync >= SYNC_INTERVAL_SECONDS:
+            if stamp != previous_stamp:
                 managed = process_pinned(managed)
                 previous_stamp = stamp
+                last_sync = now
+            elif now - last_sync >= SYNC_INTERVAL_SECONDS:
+                sync_managed_sources(managed)
                 last_sync = now
         except Exception as exc:
             log("Watcher error: " + str(exc))
