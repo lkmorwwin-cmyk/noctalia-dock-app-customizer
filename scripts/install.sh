@@ -15,9 +15,8 @@ python3 -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1
 command -v systemctl >/dev/null || { echo "systemd is required." >&2; exit 1; }
 
 mkdir -p "$BIN_DIR" "$UNIT_DIR" "$DATA_DIR"
-for name in noctalia_app_customize.py noctalia_dock_watch.py; do
-  install -Dm755 "$ROOT/src/$name" "$BIN_DIR/${name%.py}"
-done
+install -Dm755 "$ROOT/src/noctalia_app_customize.py" "$BIN_DIR/noctalia-app-customize"
+install -Dm755 "$ROOT/src/noctalia_dock_watch.py" "$BIN_DIR/noctalia-dock-watch"
 install -Dm644 "$ROOT/systemd/noctalia-dock-watch.service" "$UNIT_DIR/noctalia-dock-watch.service"
 
 systemctl --user daemon-reload
