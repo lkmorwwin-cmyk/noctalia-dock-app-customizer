@@ -10,7 +10,7 @@
 ![Noctalia](https://img.shields.io/badge/desktop-Noctalia-7c3aed?style=flat-square)
 ![Python](https://img.shields.io/badge/Python-3.11%2B-3776ab?style=flat-square&logo=python&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-2563eb?style=flat-square)
-![Version](https://img.shields.io/badge/version-1.0.0%20stable-2ea44f?style=flat-square)
+![Version](https://img.shields.io/badge/version-1.1.0%20stable-2ea44f?style=flat-square)
 
 *A small, focused utility for customizing application icons and names in Noctalia Dock.*
 
@@ -71,9 +71,24 @@ To uninstall:
 bash scripts/uninstall.sh
 ```
 
+## Update
+
+When a new version is released, update the existing source checkout and reinstall the user-level files:
+
+```bash
+cd ~/noctalia-dock-app-customizer
+git pull --ff-only
+bash scripts/install.sh
+systemctl --user restart noctalia-dock-watch.service
+```
+
+The installer refreshes the installed scripts and service unit. Restarting the service makes the running watcher use the new code immediately. Your user configuration and customized launcher data are kept. If you cloned the repository into a different directory, use that directory instead of `~/noctalia-dock-app-customizer`.
+
+Check [Releases](https://github.com/lkmorwwin-cmyk/noctalia-dock-app-customizer/releases) and [CHANGELOG](CHANGELOG.md) for new versions and their changes.
+
 ## Documentation
 
-**Current version: 1.0.0 — first stable release.** See [CHANGELOG](CHANGELOG.md) for release notes.
+**Current version: 1.1.0.** See [CHANGELOG](CHANGELOG.md) for release notes.
 
 | Language | Guide |
 |:--|:--|
