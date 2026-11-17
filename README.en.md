@@ -115,10 +115,15 @@ The watcher is designed for continuous background operation with a small resourc
 |:--|--:|
 | systemd service memory | **≈ 7.8 MiB** |
 | service tasks/threads | **1** |
-| cumulative CPU time at sampling | **≈ 0.48 s** |
+| first cumulative CPU sample | **0.480332 s** |
+| second cumulative CPU sample (20 minutes later) | **0.489231 s** |
+| CPU time during the 20-minute interval | **0.008899 s (8.9 ms)** |
+| average use of one logical CPU core during the interval | **≈ 0.00074%** |
+
+The two samples were taken about 20 minutes apart: memory remained at 7.82 MiB and the task count remained at 1. The service accumulated 8.899 ms of CPU time during that interval, equivalent to approximately 0.00074% average use of one logical CPU core.
 
 > [!IMPORTANT]
-> This is a single measurement taken shortly after startup, not a long-duration benchmark or a guarantee for every system. Actual usage depends on the environment, number of pinned apps, and how often settings change.
+> This is a short observation on one system, not a long-duration benchmark or a guarantee for every system. The average does not rule out brief spikes. Actual usage depends on the environment, number of pinned apps, and how often settings change.
 
 Inspect the values on your own system:
 
@@ -170,7 +175,7 @@ The watcher log rotates at 256 KiB and keeps one previous copy.
 - [x] Add automatic Russian and English interface selection.
 - [x] Harden manifest validation and managed-launcher cleanup.
 - [x] Document security checks and measured resource usage.
-- [ ] Verify Flatpak/Snap support.
+- [ ] Verify apps installed through Flatpak, Snap, and AUR (including yay).
 - [ ] Test more distributions and Noctalia versions.
 - [ ] Publish the first stable release.
 
