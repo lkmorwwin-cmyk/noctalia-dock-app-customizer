@@ -136,6 +136,67 @@ class WatcherTests(unittest.TestCase):
             ):
                 self.assertEqual(watcher.find_desktop("termius.desktop"), user_entry)
 
+    def test_sync_updates_source_fields_and_preserves_user_appearance(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source, target = root / "source.desktop", root / "target.desktop"
+            state = root / "state"
+            source.write_text("[Desktop Entry]\\nName=Updated App\\nIcon=updated-icon\\nExec=updated-command %U\\n", encoding="utf-8")
+            target.write_text(
+                "[Desktop Entry]\\nName=My renamed App\\nIcon=/home/user/custom.png\\nExec=old-command\\n"
+                "Actions=NoctaliaChangeIcon;NoctaliaRename;NoctaliaReset;\\n"
+                "\\n[Desktop Action NoctaliaChangeIcon]\\nName=Change icon\\n"
+                "\\n[Desktop Action NoctaliaRename]\\nName=Rename\\n"
+                "\\n[Desktop Action NoctaliaReset]\\nName=Reset appearance\\n",
+                encoding="utf-8",
+            )
+            state.mkdir()
+            (state / "target.json").write_text(json.dumps({"Name": "Old App", "Icon": "old-icon", "CustomIcon": "/home/user/custom.png"}), encoding="utf-8")
+            with patch.object(watcher, "STATE", state), patch.object(watcher, "LOG", root / "watcher.log"):
+                self.assertTrue(watcher.sync_managed_launcher(source, target, "target.desktop"))
+            result = target.read_text(encoding="utf-8")
+            self.assertIn("Name=My renamed App", result)
+            self.assertIn("Icon=/home/user/custom.png", result)
+            self.assertIn("Exec=updated-command %U", result)
+            self.assertIn("[Desktop Action NoctaliaReset]", result)
+            updated = json.loads((state / "target.json").read_text(encoding="utf-8"))
+            self.assertEqual(updated["Name"], "Updated App")
+            self.assertEqual(updated["Icon"], "updated-icon")
+            self.assertEqual(updated["CustomIcon"], "/home/user/custom.png")
+
+    def test_sync_updates_unmodified_name_and_icon(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source, target = root / "source.desktop", root / "target.desktop"
+            state = root / "state"
+            source.write_text("[Desktop Entry]\\nName=New Name\\nIcon=new-icon\\nExec=new-command\\n", encoding="utf-8")
+            target.write_text(
+                "[Desktop Entry]\\nName=Old Name\\nIcon=old-icon\\nExec=old-command\\n"
+                "Actions=NoctaliaChangeIcon;NoctaliaRename;NoctaliaReset;\\n"
+                "\\n[Desktop Action NoctaliaReset]\\nName=Reset\\n",
+                encoding="utf-8",
+            )
+            state.mkdir()
+            (state / "target.json").write_text(json.dumps({"Name": "Old Name", "Icon": "old-icon", "CustomIcon": ""}), encoding="utf-8")
+            with patch.object(watcher, "STATE", state), patch.object(watcher, "LOG", root / "watcher.log"):
+                self.assertTrue(watcher.sync_managed_launcher(source, target, "target.desktop"))
+            result = target.read_text(encoding="utf-8")
+            self.assertIn("Name=New Name", result)
+            self.assertIn("Icon=new-icon", result)
+            self.assertIn("Exec=new-command", result)
+
+    def test_sync_refuses_unrecognized_or_symlink_target(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source, target = root / "source.desktop", root / "target.desktop"
+            source.write_text("[Desktop Entry]\\nName=New\\n", encoding="utf-8")
+            target.write_text("[Desktop Entry]\\nName=User replacement\\n", encoding="utf-8")
+            with patch.object(watcher, "LOG", root / "watcher.log"):
+                self.assertFalse(watcher.sync_managed_launcher(source, target, "target.desktop"))
+            link = root / "link.desktop"
+            link.symlink_to(target)
+            self.assertFalse(watcher.sync_managed_launcher(source, link, "link.desktop"))
+
     def test_manifest_rejects_paths_and_non_list_data(self):
         with tempfile.TemporaryDirectory() as directory:
             manifest = Path(directory) / "manifest.json"
