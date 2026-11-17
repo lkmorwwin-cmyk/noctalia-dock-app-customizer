@@ -48,7 +48,7 @@
 
 ## 🚀 Installation and removal
 
-The currently supported installation method is the installer script from the source repository. An AUR/yay package is being considered separately; Flatpak packaging is not planned because the utility needs safe access to host desktop files and the user's systemd service.
+Install from the source repository using the installer script.
 
 **Requirements:** Linux, Noctalia, Python 3.11+, a systemd user session. Zenity is required for graphical dialogs.
 
