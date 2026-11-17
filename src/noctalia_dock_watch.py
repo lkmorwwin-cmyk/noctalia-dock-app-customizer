@@ -14,6 +14,7 @@ STATE = DATA_HOME / "noctalia-app-customizer"
 ICONS = DATA_HOME / "icons/noctalia-app-customizer"
 LOG = STATE_HOME / "noctalia-dock-watch.log"
 MANIFEST = STATE_HOME / "noctalia-dock-managed.json"
+TRACKED = STATE_HOME / "noctalia-dock-actions.json"
 MAX_LOG = 256 * 1024
 POLL_SECONDS = 3
 
@@ -52,6 +53,30 @@ def load_manifest() -> set[str]:
                 managed.add(match.group(1).strip())
     save_manifest(managed)
     return managed
+
+def load_tracked() -> set[str]:
+    try:
+        data = json.loads(TRACKED.read_text(encoding="utf-8"))
+        return {x for x in data if isinstance(x, str) and x.endswith(".desktop")}
+    except (OSError, ValueError, TypeError):
+        return set()
+
+def save_tracked(tracked: set[str]) -> None:
+    atomic_json(TRACKED, sorted(tracked))
+
+def remove_actions_for(filename: str) -> None:
+    target = LOCAL_APPS / filename
+    if not target.is_file():
+        return
+    try:
+        result = subprocess.run(
+            [sys.executable, str(CUSTOMIZER), "uninstall", filename],
+            check=False, capture_output=True, text=True,
+        )
+        if result.returncode:
+            log("Could not remove custom actions from " + filename + ": " + result.stderr.strip())
+    except OSError as exc:
+        log("Could not run customizer cleanup for " + filename + ": " + str(exc))
 
 def normalize_id(app_id: str) -> str:
     if not app_id or app_id in {".", ".."} or "/" in app_id or "\\" in app_id:
@@ -123,8 +148,15 @@ def process_pinned(managed: set[str]) -> set[str]:
         log("Could not parse Noctalia settings: " + str(exc))
         return managed
 
-    for filename in sorted(managed - pinned_files):
-        remove_managed_file(filename, managed)
+    tracked = load_tracked()
+    for filename in sorted(tracked - pinned_files):
+        remove_actions_for(filename)
+        if filename in managed:
+            remove_managed_file(filename, managed)
+        else:
+            metadata_path(filename).unlink(missing_ok=True)
+        tracked.discard(filename)
+        save_tracked(tracked)
 
     for filename in sorted(pinned_files):
         target = LOCAL_APPS / filename
@@ -149,15 +181,21 @@ def process_pinned(managed: set[str]) -> set[str]:
             )
             if result.returncode:
                 log("Customizer failed for " + filename + ": " + result.stderr.strip())
+            else:
+                tracked.add(filename)
+                save_tracked(tracked)
         except OSError as exc:
             log("Could not launch customizer for " + filename + ": " + str(exc))
     return managed
 
 def cleanup_all(managed: set[str]) -> None:
+    for filename in sorted(load_tracked()):
+        remove_actions_for(filename)
+    TRACKED.unlink(missing_ok=True)
     for filename in sorted(managed.copy()):
         remove_managed_file(filename, managed)
     MANIFEST.unlink(missing_ok=True)
-    log("Managed launcher cleanup completed")
+    log("Managed launcher and custom-action cleanup completed")
 
 def main() -> int:
     if len(sys.argv) > 2 or (len(sys.argv) == 2 and sys.argv[1] not in {"--once", "--cleanup"}):
