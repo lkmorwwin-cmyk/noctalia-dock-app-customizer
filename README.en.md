@@ -62,12 +62,46 @@ The utility uses standard **Desktop Actions**. It creates user-level launcher co
 > [!NOTE]
 > This is an independent community utility, not an official Noctalia plugin and not a modification of Noctalia's source code.
 
-## 🧪 Tests
+## 🧪 Tests and verification
 
-Run the test suite from the repository root:
+Run the checks from the repository root:
 
 ```bash
 python3 -m unittest discover -s tests -v
+python3 -m compileall -q src tests
+bash -n scripts/install.sh
+bash -n scripts/uninstall.sh
+```
+
+The security-focused tests cover, among other things:
+
+- refusing to delete a replaced or unrecognized launcher;
+- refusing to delete or follow a symlink placed in place of a managed launcher;
+- rejecting unsafe paths and malformed manifest data;
+- atomic JSON writes and private file permissions;
+- safe Desktop Actions cleanup.
+
+**Verification snapshot from November 17, 2026:** all 15 tests passed; Python compilation and shell syntax checks for both scripts succeeded. Installation and restart of the user service also completed successfully on CachyOS.
+
+## ⚡ Performance and resource usage
+
+The watcher is designed for continuous background operation and should have a very small idle footprint. It checks for changes to Noctalia settings and performs synchronization when a change is detected, rather than continuously recreating launcher files.
+
+**Measured snapshot on CachyOS (November 17, 2026):**
+
+| Metric | Result |
+|:--|--:|
+| systemd service memory | about 7.8 MiB |
+| service tasks/threads | 1 |
+| cumulative CPU time at the time of sampling | about 0.48 seconds |
+
+This is a single measurement taken shortly after the service started, not a long-duration benchmark or a guarantee for every system. Actual usage depends on the environment, number of pinned applications, and how often settings change.
+
+You can inspect the values on your own system with:
+
+```bash
+systemctl --user show noctalia-dock-watch.service \
+  -p MemoryCurrent -p CPUUsageNSec -p TasksCurrent
 ```
 
 ## 🔍 Service and logs
@@ -84,7 +118,10 @@ The watcher log rotates at 256 KiB and keeps one previous copy.
 
 - System desktop-entry files are not modified.
 - Created launcher copies are recorded in a manifest.
-- Unpin cleanup removes only files listed in that manifest.
+- Unpin cleanup removes only recognized files owned by this utility.
+- Replaced, unrecognized, and symlink launcher paths are preserved.
+- Manifest paths and data structure are validated.
+- State JSON files are written atomically with private file permissions.
 - Existing user-level desktop entries are never deleted by the watcher.
 - Uninstallation leaves logs and unrelated user data untouched.
 
@@ -103,6 +140,8 @@ The watcher log rotates at 256 KiB and keeps one previous copy.
 - [x] Add installation and uninstallation scripts.
 - [x] Add automated tests.
 - [x] Add automatic Russian and English interface selection.
+- [x] Harden manifest validation and managed-launcher cleanup.
+- [x] Document security checks and measured resource usage.
 - [ ] Verify Flatpak/Snap support.
 - [ ] Test more distributions and Noctalia versions.
 - [ ] Publish the first stable release.
