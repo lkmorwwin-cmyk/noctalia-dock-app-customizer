@@ -9,9 +9,9 @@
 ![Linux](https://img.shields.io/badge/platform-Linux-2ea44f?style=flat-square&logo=linux&logoColor=white)
 ![Noctalia](https://img.shields.io/badge/desktop-Noctalia-7c3aed?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-2563eb?style=flat-square)
-![Status](https://img.shields.io/badge/status-early%20development-f59e0b?style=flat-square)
+![Status](https://img.shields.io/badge/status-public%20testing-f59e0b?style=flat-square)
 
-**A small, automatic desktop-entry customizer for Noctalia Dock.**
+**A lightweight utility for customizing app icons and names in Noctalia Dock.**
 
 </div>
 
@@ -23,27 +23,57 @@
 |:--:|:--:|:--:|
 | Pick a custom image | Choose a display name | Restore original values |
 
-The project integrates with Noctalia through standard Linux **Desktop Actions**. A user-level watcher keeps launcher entries in sync with the apps pinned to the Dock.
+The utility integrates through standard Linux **Desktop Actions**. A user-level watcher keeps launcher entries in sync with the apps pinned to the Dock.
 
 > [!NOTE]
-> This is an independent community utility. It is **not** an official Noctalia plugin and does not patch or replace Noctalia itself.
+> This is an independent community utility, not an official Noctalia plugin. It does not patch or replace Noctalia.
+
+## 🚀 Quick start
+
+**Requirements:** Linux, Noctalia, Python 3.11+, systemd user session, and Zenity for graphical dialogs.
+
+```bash
+git clone https://github.com/lkmorwwin-cmyk/noctalia-dock-app-customizer.git
+cd noctalia-dock-app-customizer
+./scripts/install.sh
+```
+
+To uninstall:
+
+```bash
+./scripts/uninstall.sh
+```
 
 ## 🌍 Documentation
 
 - 🇷🇺 **[Русская документация](README.ru.md)**
 - 🇬🇧 **[English documentation](README.en.md)**
 
-## 🧭 Project status
+## 🧭 Project structure
 
-The repository is being prepared for public testing. Compatibility depends on the desktop environment, application packaging format, and the structure of installed `.desktop` launchers. Features are documented conservatively; see the language-specific guides for current implementation status and limitations.
+| Path | Purpose |
+|:--|:--|
+| `src/noctalia_app_customize.py` | Desktop Actions and icon/name editing |
+| `src/noctalia_dock_watch.py` | Pinned-app watcher and managed-file cleanup |
+| `systemd/` | User service unit |
+| `scripts/` | Installer and uninstaller |
 
-## 💡 Design goals
+## 🔍 Service and logs
 
-- Keep all customizations in the user's home directory.
-- Never overwrite an existing user-managed launcher.
-- Track files created by the utility and clean up only those files.
-- Make changes persistent across logins.
-- Keep the background service lightweight and its logs bounded.
+```bash
+systemctl --user status noctalia-dock-watch.service
+journalctl --user -u noctalia-dock-watch.service -f
+tail -f ~/.local/state/noctalia-dock-watch.log
+```
+
+The watcher log rotates at 256 KiB and keeps one previous copy.
+
+## 🛡️ Safety notes
+
+- System desktop-entry files are not modified.
+- The watcher records launcher copies it creates in a manifest.
+- Unpin cleanup is restricted to files recorded in that manifest.
+- Existing user-level desktop entries are not deleted by the watcher.
 
 ---
 
@@ -51,6 +81,6 @@ The repository is being prepared for public testing. Compatibility depends on th
 
 **Personalize your Dock. Keep your system files untouched.**
 
-MIT License · Contributions and bug reports are welcome.
+MIT License · Contributions welcome
 
 </div>
