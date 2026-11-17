@@ -1,3 +1,4 @@
+import json
 import os
 import tempfile
 import unittest
@@ -22,7 +23,6 @@ class DesktopEntryTests(unittest.TestCase):
             self.assertTrue(customize.is_russian())
 
     def test_filename_preserves_normalized_desktop_filename(self):
-        # The customizer receives a filename from the watcher, not a raw app ID.
         self.assertEqual(customize.filename_for("org.telegram.desktop.desktop"), "org.telegram.desktop.desktop")
         self.assertEqual(customize.filename_for("firefox.desktop"), "firefox.desktop")
 
@@ -71,8 +71,9 @@ class WatcherTests(unittest.TestCase):
         self.assertEqual(watcher.normalize_id("firefox.desktop"), "firefox.desktop.desktop")
 
     def test_rejects_path_traversal(self):
-        with self.assertRaises(ValueError):
-            watcher.normalize_id("../../outside")
+        for value in ("../../outside", "../bad.desktop", "bad\\name", "bad\x00name"):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                watcher.normalize_id(value)
 
     def test_finds_desktop_file_in_xdg_data_dir(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -83,6 +84,61 @@ class WatcherTests(unittest.TestCase):
             target.write_text("[Desktop Entry]\nName=Example\n", encoding="utf-8")
             with patch.object(watcher, "DATA_HOME", root), patch.dict("os.environ", {"XDG_DATA_DIRS": directory}):
                 self.assertEqual(watcher.find_desktop("org.example.App.desktop"), target)
+
+    def test_manifest_rejects_paths_and_non_list_data(self):
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = Path(directory) / "manifest.json"
+            manifest.write_text(json.dumps(["safe.desktop", "../outside.desktop", "/tmp/x.desktop", "bad\\x.desktop", 7]), encoding="utf-8")
+            with patch.object(watcher, "MANIFEST", manifest):
+                self.assertEqual(watcher.load_manifest(), {"safe.desktop"})
+            manifest.write_text(json.dumps({"safe.desktop": True}), encoding="utf-8")
+            with patch.object(watcher, "MANIFEST", manifest), patch.object(watcher, "LOG", Path(directory) / "missing.log"):
+                self.assertEqual(watcher.load_manifest(), set())
+
+    def test_atomic_json_replaces_state_and_uses_private_permissions(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "state.json"
+            watcher.atomic_json(path, ["one.desktop"])
+            self.assertEqual(json.loads(path.read_text(encoding="utf-8")), ["one.desktop"])
+            self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+            self.assertEqual(list(Path(directory).glob(".state.json.*")), [])
+
+    def test_replaced_launcher_is_not_deleted(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            apps = root / "applications"
+            apps.mkdir()
+            target = apps / "sample.desktop"
+            target.write_text("[Desktop Entry]\nName=My replacement\nExec=custom-command\n", encoding="utf-8")
+            managed = {"sample.desktop"}
+            with patch.object(watcher, "LOCAL_APPS", apps), patch.object(watcher, "MANIFEST", root / "manifest.json"), patch.object(watcher, "STATE", root / "state"), patch.object(watcher, "ICONS", root / "icons"):
+                watcher.remove_managed_file("sample.desktop", managed)
+            self.assertTrue(target.exists())
+            self.assertIn("sample.desktop", managed)
+
+    def test_symlink_launcher_is_not_deleted_or_followed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            apps = root / "applications"
+            apps.mkdir()
+            outside = root / "outside.desktop"
+            outside.write_text("[Desktop Entry]\nName=Keep\n", encoding="utf-8")
+            target = apps / "sample.desktop"
+            target.symlink_to(outside)
+            managed = {"sample.desktop"}
+            with patch.object(watcher, "LOCAL_APPS", apps), patch.object(watcher, "MANIFEST", root / "manifest.json"), patch.object(watcher, "STATE", root / "state"), patch.object(watcher, "ICONS", root / "icons"):
+                watcher.remove_managed_file("sample.desktop", managed)
+            self.assertTrue(target.is_symlink())
+            self.assertTrue(outside.exists())
+
+    def test_action_cleanup_skips_unrecognized_replacement(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            target = root / "sample.desktop"
+            target.write_text("[Desktop Entry]\nName=Replacement\n", encoding="utf-8")
+            with patch.object(watcher, "LOCAL_APPS", root), patch("src.noctalia_dock_watch.subprocess.run") as run:
+                self.assertFalse(watcher.remove_actions_for("sample.desktop"))
+                run.assert_not_called()
 
 
 if __name__ == "__main__":
