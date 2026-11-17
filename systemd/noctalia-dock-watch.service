@@ -1,0 +1,13 @@
+[Unit]
+Description=Noctalia Dock App Customizer
+Documentation=https://github.com/lkmorwwin-cmyk/noctalia-dock-app-customizer
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/noctalia-dock-watch
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target
