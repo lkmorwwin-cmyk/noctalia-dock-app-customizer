@@ -1,7 +1,16 @@
 #!/usr/bin/env python3
 """Watch Noctalia pinned apps and manage only launchers created by this tool."""
 from __future__ import annotations
-import json, os, re, shutil, subprocess, sys, time, tomllib
+
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+import tomllib
 from pathlib import Path
 
 HOME = Path.home()
@@ -9,7 +18,7 @@ DATA_HOME = Path(os.environ.get("XDG_DATA_HOME", HOME / ".local/share"))
 STATE_HOME = Path(os.environ.get("XDG_STATE_HOME", HOME / ".local/state"))
 CONFIG = STATE_HOME / "noctalia/settings.toml"
 LOCAL_APPS = DATA_HOME / "applications"
-CUSTOMIZER = Path.home() / ".local/bin/noctalia-app-customize"
+CUSTOMIZER = HOME / ".local/bin/noctalia-app-customize"
 STATE = DATA_HOME / "noctalia-app-customizer"
 ICONS = DATA_HOME / "icons/noctalia-app-customizer"
 LOG = STATE_HOME / "noctalia-dock-watch.log"
@@ -17,6 +26,8 @@ MANIFEST = STATE_HOME / "noctalia-dock-managed.json"
 TRACKED = STATE_HOME / "noctalia-dock-actions.json"
 MAX_LOG = 256 * 1024
 POLL_SECONDS = 3
+OWN_ACTIONS = ("NoctaliaChangeIcon", "NoctaliaRename", "NoctaliaReset")
+
 
 def log(message: str) -> None:
     LOG.parent.mkdir(parents=True, exist_ok=True)
@@ -27,47 +38,93 @@ def log(message: str) -> None:
     with LOG.open("a", encoding="utf-8") as stream:
         stream.write(time.strftime("%F %T ") + message + "\n")
 
+
 def atomic_json(path: Path, value) -> None:
+    """Write JSON atomically without following a predictable temporary path."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    temporary.replace(path)
+    fd, temporary = tempfile.mkstemp(prefix="." + path.name + ".", dir=path.parent)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as stream:
+            json.dump(value, stream, ensure_ascii=False, indent=2)
+            stream.write("\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.chmod(temporary, 0o600)
+        os.replace(temporary, path)
+    except Exception:
+        Path(temporary).unlink(missing_ok=True)
+        raise
+
+
+def valid_filename(value: object) -> bool:
+    return (
+        isinstance(value, str)
+        and value.endswith(".desktop")
+        and value not in {".desktop", "..desktop"}
+        and not any(char in value for char in ("/", "\\", "\x00"))
+        and Path(value).name == value
+    )
+
 
 def save_manifest(managed: set[str]) -> None:
     atomic_json(MANIFEST, sorted(managed))
 
+
+def _load_names(path: Path) -> set[str]:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(data, list):
+            raise ValueError("expected a JSON list")
+        return {item for item in data if valid_filename(item)}
+    except FileNotFoundError:
+        return set()
+    except (OSError, ValueError, TypeError) as exc:
+        log("Could not read " + path.name + ": " + str(exc))
+        return set()
+
+
 def load_manifest() -> set[str]:
     if MANIFEST.exists():
-        try:
-            data = json.loads(MANIFEST.read_text(encoding="utf-8"))
-            return {x for x in data if isinstance(x, str) and x.endswith(".desktop")}
-        except Exception as exc:
-            log("Could not read managed manifest: " + str(exc))
-            return set()
+        return _load_names(MANIFEST)
+
     # Import entries recorded by the previous version's log.
-    managed = set()
+    managed: set[str] = set()
     if LOG.exists():
         for line in LOG.read_text(encoding="utf-8", errors="replace").splitlines():
             match = re.search(r"Создан пользовательский desktop-файл: (.+)$", line)
-            if match:
+            if match and valid_filename(match.group(1).strip()):
                 managed.add(match.group(1).strip())
     save_manifest(managed)
     return managed
 
+
 def load_tracked() -> set[str]:
-    try:
-        data = json.loads(TRACKED.read_text(encoding="utf-8"))
-        return {x for x in data if isinstance(x, str) and x.endswith(".desktop")}
-    except (OSError, ValueError, TypeError):
-        return set()
+    return _load_names(TRACKED)
+
 
 def save_tracked(tracked: set[str]) -> None:
     atomic_json(TRACKED, sorted(tracked))
 
-def remove_actions_for(filename: str) -> None:
+
+def has_our_actions(path: Path) -> bool:
+    """Recognize our action sections before ever editing/removing a launcher."""
+    try:
+        if path.is_symlink() or not path.is_file():
+            return False
+        content = path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return False
+    return any("[Desktop Action " + action + "]" in content for action in OWN_ACTIONS)
+
+
+def remove_actions_for(filename: str) -> bool:
+    if not valid_filename(filename):
+        return False
     target = LOCAL_APPS / filename
-    if not target.is_file():
-        return
+    # Do not let stale tracking metadata modify a file that has since been
+    # replaced by the user or by another application.
+    if not has_our_actions(target):
+        return False
     try:
         result = subprocess.run(
             [sys.executable, str(CUSTOMIZER), "uninstall", filename],
@@ -75,18 +132,22 @@ def remove_actions_for(filename: str) -> None:
         )
         if result.returncode:
             log("Could not remove custom actions from " + filename + ": " + result.stderr.strip())
+            return False
+        return True
     except OSError as exc:
         log("Could not run customizer cleanup for " + filename + ": " + str(exc))
+        return False
+
 
 def normalize_id(app_id: str) -> str:
-    """Convert a pinned application ID to its desktop filename.
-
-    Pinned values are application IDs, not filenames. An ID such as
-    org.telegram.desktop therefore becomes org.telegram.desktop.desktop.
-    """
-    if not app_id or app_id in {".", ".."} or "/" in app_id or "\\" in app_id:
+    """Convert a pinned application ID to its desktop filename."""
+    if (
+        not app_id or app_id in {".", ".."}
+        or any(char in app_id for char in ("/", "\\", "\x00"))
+    ):
         raise ValueError("Invalid pinned application ID: " + repr(app_id))
     return app_id + ".desktop"
+
 
 def data_directories() -> list[Path]:
     configured = os.environ.get("XDG_DATA_DIRS")
@@ -95,41 +156,58 @@ def data_directories() -> list[Path]:
              Path("/usr/local/share"), Path("/usr/share")]
     return list(dict.fromkeys(paths))
 
+
 def find_desktop(filename: str) -> Path | None:
-    if not filename.endswith(".desktop") or "/" in filename or "\\" in filename:
+    if not valid_filename(filename):
         return None
     for directory in data_directories():
         root = directory / "applications"
         direct = root / filename
-        if direct.is_file():
+        if direct.is_file() and not direct.is_symlink():
             return direct
         if root.is_dir():
             try:
                 found = next(root.rglob(filename), None)
             except OSError:
                 found = None
-            if found and found.is_file():
+            if found and found.is_file() and not found.is_symlink():
                 return found
     return None
 
+
 def metadata_path(filename: str) -> Path:
+    if not valid_filename(filename):
+        raise ValueError("Invalid desktop filename")
     return STATE / (Path(filename).stem + ".json")
+
 
 def remove_custom_icon(filename: str) -> None:
     meta = metadata_path(filename)
-    if not meta.is_file():
+    if not meta.is_file() or meta.is_symlink():
         return
     try:
         custom_icon = json.loads(meta.read_text(encoding="utf-8")).get("CustomIcon", "")
         if custom_icon:
             candidate = Path(custom_icon)
             candidate.resolve().relative_to(ICONS.resolve())
-            candidate.unlink(missing_ok=True)
+            if candidate.is_file() and not candidate.is_symlink():
+                candidate.unlink()
     except (OSError, ValueError, TypeError):
         pass
 
+
 def remove_managed_file(filename: str, managed: set[str]) -> None:
+    if not valid_filename(filename):
+        return
     target = LOCAL_APPS / filename
+    # A manifest entry alone is insufficient: a user may have replaced the
+    # managed copy. Only delete a regular file that still carries our marker.
+    if target.is_symlink():
+        log("Preserving symlink in place of managed launcher: " + filename)
+        return
+    if target.exists() and not has_our_actions(target):
+        log("Preserving replaced or unrecognized launcher: " + filename)
+        return
     if target.is_file():
         try:
             target.unlink()
@@ -138,9 +216,12 @@ def remove_managed_file(filename: str, managed: set[str]) -> None:
             log("Could not remove " + filename + ": " + str(exc))
             return
     remove_custom_icon(filename)
-    metadata_path(filename).unlink(missing_ok=True)
+    meta = metadata_path(filename)
+    if meta.is_file() and not meta.is_symlink():
+        meta.unlink(missing_ok=True)
     managed.discard(filename)
     save_manifest(managed)
+
 
 def process_pinned(managed: set[str]) -> set[str]:
     if not CONFIG.is_file():
@@ -148,7 +229,12 @@ def process_pinned(managed: set[str]) -> set[str]:
         return managed
     try:
         settings = tomllib.loads(CONFIG.read_text(encoding="utf-8"))
-        pinned = settings.get("dock", {}).get("pinned", [])
+        dock = settings.get("dock", {})
+        if not isinstance(dock, dict):
+            raise ValueError("dock settings must be a table")
+        pinned = dock.get("pinned", [])
+        if not isinstance(pinned, list):
+            raise ValueError("dock.pinned must be a list")
         pinned_files = {normalize_id(item) for item in pinned if isinstance(item, str) and item}
     except Exception as exc:
         log("Could not parse Noctalia settings: " + str(exc))
@@ -159,13 +245,15 @@ def process_pinned(managed: set[str]) -> set[str]:
         remove_actions_for(filename)
         if filename in managed:
             remove_managed_file(filename, managed)
-        else:
-            metadata_path(filename).unlink(missing_ok=True)
+        # Do not delete metadata for a file that may have been replaced.
         tracked.discard(filename)
         save_tracked(tracked)
 
     for filename in sorted(pinned_files):
         target = LOCAL_APPS / filename
+        if target.is_symlink():
+            log("Refusing to customize symlink: " + filename)
+            continue
         if not target.exists():
             source = find_desktop(filename)
             if source is None:
@@ -180,6 +268,9 @@ def process_pinned(managed: set[str]) -> set[str]:
             except OSError as exc:
                 log("Could not create " + filename + ": " + str(exc))
                 continue
+        elif not target.is_file():
+            log("Refusing to customize non-regular path: " + filename)
+            continue
         try:
             result = subprocess.run(
                 [sys.executable, str(CUSTOMIZER), "install", filename],
@@ -194,6 +285,7 @@ def process_pinned(managed: set[str]) -> set[str]:
             log("Could not launch customizer for " + filename + ": " + str(exc))
     return managed
 
+
 def cleanup_all(managed: set[str]) -> None:
     for filename in sorted(load_tracked()):
         remove_actions_for(filename)
@@ -202,6 +294,7 @@ def cleanup_all(managed: set[str]) -> None:
         remove_managed_file(filename, managed)
     MANIFEST.unlink(missing_ok=True)
     log("Managed launcher and custom-action cleanup completed")
+
 
 def main() -> int:
     if len(sys.argv) > 2 or (len(sys.argv) == 2 and sys.argv[1] not in {"--once", "--cleanup"}):
@@ -226,6 +319,7 @@ def main() -> int:
         except Exception as exc:
             log("Watcher error: " + str(exc))
         time.sleep(POLL_SECONDS)
+
 
 if __name__ == "__main__":
     raise SystemExit(main())
