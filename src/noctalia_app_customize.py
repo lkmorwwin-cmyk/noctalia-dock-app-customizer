@@ -11,6 +11,19 @@ STATE = DATA_HOME / "noctalia-app-customizer"
 ICONS = DATA_HOME / "icons/noctalia-app-customizer"
 SCRIPT = Path(__file__).resolve()
 PYTHON = Path(sys.executable).resolve()
+def is_russian() -> bool:
+    """Detect Russian from the desktop session locale."""
+    for variable in ("LC_ALL", "LC_MESSAGES", "LANG", "LANGUAGE"):
+        value = os.environ.get(variable, "").strip()
+        if not value:
+            continue
+        locale_name = value.split(":", 1)[0].split(".", 1)[0].split("@", 1)[0]
+        return locale_name.lower().startswith("ru")
+    return False
+
+def tr(english: str, russian: str) -> str:
+    return russian if is_russian() else english
+
 ACTIONS = (
     ("NoctaliaChangeIcon", "Change icon", "Сменить иконку", "icon"),
     ("NoctaliaRename", "Rename", "Переименовать", "rename"),
@@ -193,7 +206,7 @@ def remove_custom_icon(value: str) -> None:
 
 def main() -> int:
     if len(sys.argv) != 3:
-        print("Usage: noctalia-app-customize <install|icon|rename|reset|uninstall> <app.desktop>", file=sys.stderr)
+        print(tr("Usage: noctalia-app-customize <install|icon|rename|reset|uninstall> <app.desktop>", "Использование: noctalia-app-customize <install|icon|rename|reset|uninstall> <app.desktop>"), file=sys.stderr)
         return 2
     command, app_id = sys.argv[1:3]
     try:
@@ -208,18 +221,18 @@ def main() -> int:
         meta = save_baseline(path, filename)
         values = read_main(path.read_text(encoding="utf-8", errors="replace").splitlines())
         if command == "rename":
-            result = dialog("--entry", "--title=Rename application", "--text=New name:",
+            result = dialog("--entry", "--title=" + tr("Rename application", "Переименовать приложение"), "--text=" + tr("New name:", "Новое название:"),
                             "--entry-text=" + values.get("Name", ""))
             if result.returncode == 0 and result.stdout.strip():
                 edit_main(path, name=result.stdout.strip().replace("\n", " "))
-                notify("Application name updated.")
+                notify(tr("Application name updated.", "Название приложения изменено."))
         elif command == "icon":
-            result = dialog("--file-selection", "--title=Choose an icon",
-                            "--file-filter=Images | *.png *.svg *.jpg *.jpeg *.webp *.ico")
+            result = dialog("--file-selection", "--title=" + tr("Choose an icon", "Выбрать иконку"),
+                            "--file-filter=" + tr("Images", "Изображения") + " | *.png *.svg *.jpg *.jpeg *.webp *.ico")
             if result.returncode == 0 and result.stdout.strip():
                 source = Path(result.stdout.strip()).expanduser()
                 if not source.is_file():
-                    raise FileNotFoundError("Selected image does not exist")
+                    raise FileNotFoundError(tr("Selected image does not exist", "Выбранный файл изображения не существует"))
                 ICONS.mkdir(parents=True, exist_ok=True)
                 destination = ICONS / (Path(filename).stem + source.suffix.lower())
                 shutil.copy2(source, destination)
@@ -228,23 +241,23 @@ def main() -> int:
                 update_meta(meta, CustomIcon=str(destination))
                 if previous and previous != str(destination):
                     remove_custom_icon(previous)
-                notify("Application icon updated.")
+                notify(tr("Application icon updated.", "Иконка приложения изменена."))
         elif command == "reset":
             if not meta.exists():
-                notify("No saved original appearance was found.")
+                notify(tr("No saved original appearance was found.", "Сохранённое исходное оформление не найдено."))
                 return 0
             original = json.loads(meta.read_text(encoding="utf-8"))
             edit_main(path, name=original.get("Name", ""), icon=original.get("Icon", ""))
             remove_custom_icon(original.get("CustomIcon", ""))
             meta.unlink(missing_ok=True)
-            notify("Original appearance restored.")
+            notify(tr("Original appearance restored.", "Исходное оформление восстановлено."))
         else:
-            print("Unknown command: " + command, file=sys.stderr)
+            print(tr("Unknown command: ", "Неизвестная команда: ") + command, file=sys.stderr)
             return 2
         return 0
     except Exception as exc:
-        print("noctalia-app-customize: " + str(exc), file=sys.stderr)
-        notify(str(exc), error=True)
+        print(tr("noctalia-app-customize: ", "noctalia-app-customize: ") + str(exc), file=sys.stderr)
+        notify(tr("Error: ", "Ошибка: ") + str(exc), error=True)
         return 1
 
 if __name__ == "__main__":
