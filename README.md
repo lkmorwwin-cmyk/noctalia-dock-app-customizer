@@ -119,7 +119,7 @@ See [test documentation](tests/README.md) for the available checks and CI detail
 
 ## Resource usage
 
-Two CachyOS samples taken about 20 minutes apart on November 17, 2026 showed stable memory (**7.82 MiB**) and task count (**1**). Cumulative CPU time increased from **0.480332 s** to **0.489231 s**: just **8.899 ms over 20 minutes**, or approximately **0.00074% average use of one logical CPU core**.
+CachyOS measurements on November 17, 2026: the first two samples, 20 minutes apart, showed 7.82 MiB memory and 1 task, with 8.899 ms CPU time accumulated between them (about 0.00074% of one logical core). A further sample about an hour later showed **9.63 MiB** memory, **1 task**, and cumulative CPU time of **0.543459 s** — an increase of **54.228 ms** over that approximate one-hour interval (about **0.0015% average use of one logical CPU core**).
 
 This is a short observation on one system, not a long-duration benchmark or a universal guarantee. The average does not rule out brief spikes; actual usage varies by system and activity. Detailed notes and a command for checking your own system are in the [Russian](README.ru.md#-производительность-и-нагрузка) and [English](README.en.md#-performance-and-resource-usage) guides.
 
