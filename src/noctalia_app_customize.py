@@ -74,6 +74,7 @@ def save_baseline(path: Path, app_id: str) -> Path:
         if legacy.is_file():
             STATE.mkdir(parents=True, exist_ok=True)
             legacy.replace(meta)
+            return meta
         values = read_main(path.read_text(encoding="utf-8", errors="replace").splitlines())
         payload = {"Name": values.get("Name", Path(filename_for(app_id)).stem),
                    "Icon": values.get("Icon", ""), "CustomIcon": ""}
