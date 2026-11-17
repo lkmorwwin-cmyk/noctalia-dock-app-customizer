@@ -10,7 +10,7 @@
 
 ## What's covered
 
-The test suite uses only the **Python standard library** — no third-party test framework is required.
+The test suite uses only the **Python standard library** — no third-party test framework is required. The installer can automatically install the runtime requirements (Python 3.11+ and Zenity) on systems using pacman, APT, DNF, or Zypper.
 
 It includes checks for:
 
