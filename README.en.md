@@ -68,7 +68,7 @@ Context-menu actions, dialogs, and notifications follow the desktop session loca
 The utility uses standard **Desktop Actions**. It creates user-level launcher copies and adds actions that Noctalia Dock can display in its context menu.
 
 1. Reads the pinned-app list from Noctalia settings.
-2. Locates the corresponding system `.desktop` launchers.
+2. Locates the corresponding system `.desktop` launchers, including Flatpak-exported entries through validated symlinks.
 3. Creates user-level copies in `~/.local/share/applications`.
 4. Adds actions for changing the icon, renaming, and resetting.
 5. A background service tracks changes to the pinned-app list.
@@ -90,7 +90,9 @@ bash -n scripts/uninstall.sh
 Security-focused tests cover, among other things:
 
 - refusing to delete a replaced or unrecognized launcher;
-- refusing to delete or follow a symlink placed in place of a managed launcher;
+- refusing to delete or follow arbitrary symlinks placed in place of a managed launcher;
+- accepting only validated Flatpak export symlinks that resolve inside an installed app directory;
+- preserving user-level desktop-entry priority over system launchers;
 - rejecting unsafe paths and malformed manifest data;
 - atomic JSON writes and private file permissions;
 - safe Desktop Actions cleanup.
@@ -165,6 +167,7 @@ The watcher log rotates at 256 KiB and keeps one previous copy.
 - The Dock may take a moment to refresh after a launcher changes.
 - Flatpak, Snap, and non-standard installation methods need separate verification.
 - Compatibility with every Noctalia version and Linux distribution is not yet guaranteed.
+- Flatpak-exported launchers may be symlinks: the watcher accepts only links from the standard Flatpak exports directory whose targets remain inside the Flatpak installation's `app` directory.
 - If an application already has a user-level desktop entry, the utility adds actions to it. That file is not treated as a watcher-created copy and is not automatically removed.
 
 ## 🗺️ Roadmap
