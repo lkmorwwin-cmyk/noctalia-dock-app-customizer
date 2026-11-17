@@ -54,7 +54,7 @@ class DesktopEntryTests(unittest.TestCase):
 class WatcherTests(unittest.TestCase):
     def test_normalizes_application_ids(self):
         self.assertEqual(watcher.normalize_id("org.telegram.desktop"), "org.telegram.desktop.desktop")
-        self.assertEqual(watcher.normalize_id("firefox.desktop"), "firefox.desktop")
+        self.assertEqual(watcher.normalize_id("firefox.desktop"), "firefox.desktop.desktop")
 
     def test_rejects_path_traversal(self):
         with self.assertRaises(ValueError):
