@@ -157,21 +157,52 @@ def data_directories() -> list[Path]:
     return list(dict.fromkeys(paths))
 
 
+def _desktop_candidate(candidate: Path, data_directory: Path) -> Path | None:
+    """Return a regular launcher, allowing only trusted Flatpak export symlinks."""
+    if candidate.is_symlink():
+        # Flatpak deliberately exposes app launchers through symlinks in
+        # <installation>/exports/share/applications. Do not follow arbitrary
+        # symlinks from user or system application directories.
+        if not (
+            data_directory.name == "share"
+            and data_directory.parent.name == "exports"
+            and data_directory.parent.parent.name == "flatpak"
+        ):
+            return None
+        try:
+            app_root = (data_directory.parent.parent / "app").resolve(strict=True)
+            resolved = candidate.resolve(strict=True)
+            relative = resolved.relative_to(app_root)
+        except (OSError, ValueError, RuntimeError):
+            return None
+        if (
+            len(relative.parts) < 4
+            or relative.parts[-4:-1] != ("export", "share", "applications")
+            or not resolved.is_file()
+        ):
+            return None
+        return resolved
+    return candidate if candidate.is_file() else None
+
+
 def find_desktop(filename: str) -> Path | None:
     if not valid_filename(filename):
         return None
     for directory in data_directories():
         root = directory / "applications"
         direct = root / filename
-        if direct.is_file() and not direct.is_symlink():
-            return direct
+        found = _desktop_candidate(direct, directory)
+        if found is not None:
+            return found
         if root.is_dir():
             try:
-                found = next(root.rglob(filename), None)
+                candidates = root.rglob(filename)
+                for candidate in candidates:
+                    found = _desktop_candidate(candidate, directory)
+                    if found is not None:
+                        return found
             except OSError:
-                found = None
-            if found and found.is_file() and not found.is_symlink():
-                return found
+                pass
     return None
 
 
