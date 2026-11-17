@@ -12,9 +12,9 @@ ICONS = DATA_HOME / "icons/noctalia-app-customizer"
 SCRIPT = Path(__file__).resolve()
 PYTHON = Path(sys.executable).resolve()
 ACTIONS = (
-    ("NoctaliaChangeIcon", "Change icon", "icon"),
-    ("NoctaliaRename", "Rename", "rename"),
-    ("NoctaliaReset", "Reset appearance", "reset"),
+    ("NoctaliaChangeIcon", "Change icon", "Сменить иконку", "icon"),
+    ("NoctaliaRename", "Rename", "Переименовать", "rename"),
+    ("NoctaliaReset", "Reset appearance", "Сбросить оформление", "reset"),
 )
 
 def atomic_write(path: Path, content: str) -> None:
@@ -70,6 +70,10 @@ def quote_exec(value: str) -> str:
 def save_baseline(path: Path, app_id: str) -> Path:
     meta = metadata_path(app_id)
     if not meta.exists():
+        legacy = STATE / (filename_for(app_id) + ".json")
+        if legacy.is_file():
+            STATE.mkdir(parents=True, exist_ok=True)
+            legacy.replace(meta)
         values = read_main(path.read_text(encoding="utf-8", errors="replace").splitlines())
         payload = {"Name": values.get("Name", Path(filename_for(app_id)).stem),
                    "Icon": values.get("Icon", ""), "CustomIcon": ""}
@@ -121,7 +125,7 @@ def add_actions(app_id: str) -> None:
     end = next((i for i in range(start + 1, len(lines)) if lines[i].strip().startswith("[")), len(lines))
     action_index = next((i for i in range(start + 1, end) if lines[i].startswith("Actions=")), None)
     current = [x for x in lines[action_index].split("=", 1)[1].split(";") if x] if action_index is not None else []
-    for action_id, _, _ in ACTIONS:
+    for action_id, _, _, _ in ACTIONS:
         if action_id not in current:
             current.append(action_id)
     action_line = "Actions=" + ";".join(current) + ";"
@@ -130,12 +134,45 @@ def add_actions(app_id: str) -> None:
     else:
         lines[action_index] = action_line
     prefix = quote_exec(str(PYTHON)) + " " + quote_exec(str(SCRIPT))
-    for action_id, label, command in ACTIONS:
+    for action_id, label, label_ru, command in ACTIONS:
         section = "[Desktop Action " + action_id + "]"
         if section not in lines:
-            lines.extend(["", section, "Name=" + label,
+            lines.extend(["", section, "Name=" + label, "Name[ru]=" + label_ru,
                           "Exec=" + prefix + " " + command + " " + quote_exec(filename_for(app_id))])
     atomic_write(path, "\n".join(lines) + "\n")
+
+
+def remove_actions(path: Path) -> None:
+    action_ids = {item[0] for item in ACTIONS}
+    lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    output: list[str] = []
+    skip_section = False
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("[") and stripped.endswith("]"):
+            section_id = stripped[len("[Desktop Action "):-1] if stripped.startswith("[Desktop Action ") else ""
+            skip_section = section_id in action_ids
+            if skip_section:
+                continue
+        if skip_section:
+            continue
+        if stripped.startswith("Actions="):
+            remaining = [item for item in stripped.split("=", 1)[1].split(";") if item and item not in action_ids]
+            if remaining:
+                output.append("Actions=" + ";".join(remaining) + ";")
+            continue
+        output.append(line)
+    atomic_write(path, "\n".join(output) + "\n")
+
+
+def uninstall_app(path: Path, app_id: str) -> None:
+    meta = metadata_path(app_id)
+    if meta.is_file():
+        original = json.loads(meta.read_text(encoding="utf-8"))
+        edit_main(path, name=original.get("Name", ""), icon=original.get("Icon", ""))
+        remove_custom_icon(original.get("CustomIcon", ""))
+        meta.unlink(missing_ok=True)
+    remove_actions(path)
 
 def update_meta(meta: Path, **changes: str) -> dict:
     data = json.loads(meta.read_text(encoding="utf-8"))
@@ -155,7 +192,7 @@ def remove_custom_icon(value: str) -> None:
 
 def main() -> int:
     if len(sys.argv) != 3:
-        print("Usage: noctalia-app-customize <install|icon|rename|reset> <app.desktop>", file=sys.stderr)
+        print("Usage: noctalia-app-customize <install|icon|rename|reset|uninstall> <app.desktop>", file=sys.stderr)
         return 2
     command, app_id = sys.argv[1:3]
     try:
@@ -163,6 +200,9 @@ def main() -> int:
         path = desktop_path(filename)
         if command == "install":
             add_actions(filename)
+            return 0
+        if command == "uninstall":
+            uninstall_app(path, filename)
             return 0
         meta = save_baseline(path, filename)
         values = read_main(path.read_text(encoding="utf-8", errors="replace").splitlines())
