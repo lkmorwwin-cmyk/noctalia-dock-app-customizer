@@ -55,13 +55,15 @@ The utility integrates through standard Linux **Desktop Actions**. A lightweight
 
 ## Install
 
-**Requirements:** Linux, Noctalia, Python 3.11+, a systemd user session, and Zenity for graphical dialogs.
+**Requirements:** Linux, Noctalia, and a running systemd user session. The installer automatically installs Python 3.11+ and Zenity when they are missing (supported package managers: pacman, APT, DNF, and Zypper).
 
 ```bash
 git clone https://github.com/lkmorwwin-cmyk/noctalia-dock-app-customizer.git
 cd noctalia-dock-app-customizer
 bash scripts/install.sh
 ```
+
+The installer detects the package manager, asks for administrator authentication through `sudo` when needed, installs missing runtime dependencies, verifies Python 3.11+, and then installs and starts the user service. Noctalia and systemd are not installed automatically.
 
 To uninstall:
 
