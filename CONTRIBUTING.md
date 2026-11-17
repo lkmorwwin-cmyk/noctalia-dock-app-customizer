@@ -28,7 +28,7 @@ Please check whether the issue has already been reported. Include the details be
 2. Do not modify system desktop-entry files.
 3. Never overwrite or delete pre-existing user-managed launchers.
 4. Restrict cleanup to files explicitly tracked as created by this project.
-5. Avoid adding dependencies unless they are necessary and documented.
+5. Avoid adding runtime dependencies unless they are necessary and documented. Keep installer dependency detection and package mappings in sync with the supported distributions.
 6. Preserve the distinction between watcher-managed launchers and pre-existing user-level desktop entries.
 7. Keep Flatpak symlink handling restricted to validated export paths; never follow arbitrary launcher symlinks.
 8. When changing package synchronization, preserve user-customized names, icons, and Noctalia Desktop Actions.
