@@ -57,7 +57,15 @@ bash scripts/uninstall.sh
 > [!NOTE]
 > Это самостоятельная community-утилита, а не официальный плагин Noctalia и не модификация его исходного кода.
 
-## 🧪 Тесты\n\nЗапустить тесты из корня репозитория:\n\n```bash\npython3 -m unittest discover -s tests -v\n```\n\n## 🔍 Управление службой
+## 🧪 Тесты
+
+Запустить тесты из корня репозитория:
+
+```bash
+python3 -m unittest discover -s tests -v
+```
+
+## 🔍 Управление службой
 
 ```bash
 systemctl --user status noctalia-dock-watch.service
