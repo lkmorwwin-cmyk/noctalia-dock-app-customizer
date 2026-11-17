@@ -8,9 +8,10 @@ from src import noctalia_dock_watch as watcher
 
 
 class DesktopEntryTests(unittest.TestCase):
-    def test_filename_normalizes_app_id_once(self):
-        self.assertEqual(customize.filename_for("org.telegram.desktop"), "org.telegram.desktop.desktop")
+    def test_filename_preserves_normalized_desktop_filename(self):
+        # The customizer receives a filename from the watcher, not a raw app ID.
         self.assertEqual(customize.filename_for("org.telegram.desktop.desktop"), "org.telegram.desktop.desktop")
+        self.assertEqual(customize.filename_for("firefox.desktop"), "firefox.desktop")
 
     def test_rejects_path_traversal(self):
         with self.assertRaises(ValueError):
