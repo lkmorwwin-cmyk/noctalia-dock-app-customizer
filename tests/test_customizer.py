@@ -71,7 +71,7 @@ class WatcherTests(unittest.TestCase):
         self.assertEqual(watcher.normalize_id("firefox.desktop"), "firefox.desktop.desktop")
 
     def test_rejects_path_traversal(self):
-        for value in ("../../outside", "../bad.desktop", "bad\\name", "bad\x00name"):
+        for value in ("../../outside", "../bad.desktop", "bad\name", "bad\x00name"):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 watcher.normalize_id(value)
 
@@ -94,7 +94,7 @@ class WatcherTests(unittest.TestCase):
             export_apps.mkdir(parents=True)
             target_apps.mkdir(parents=True)
             target = target_apps / "com.example.App.desktop"
-            target.write_text("[Desktop Entry]\\nName=Flatpak Example\\n", encoding="utf-8")
+            target.write_text("[Desktop Entry]\nName=Flatpak Example\n", encoding="utf-8")
             exported = export_apps / target.name
             exported.symlink_to(Path("../../../app/com.example.App/current/active/export/share/applications") / target.name)
             current = flatpak / "app/com.example.App/current"
@@ -113,7 +113,7 @@ class WatcherTests(unittest.TestCase):
             apps = root / "applications"
             apps.mkdir()
             outside = root / "outside.desktop"
-            outside.write_text("[Desktop Entry]\\nName=Outside\\n", encoding="utf-8")
+            outside.write_text("[Desktop Entry]\nName=Outside\n", encoding="utf-8")
             (apps / "sample.desktop").symlink_to(outside)
             with patch.object(watcher, "DATA_HOME", root), patch.dict(
                 "os.environ", {"XDG_DATA_DIRS": ""}
@@ -129,8 +129,8 @@ class WatcherTests(unittest.TestCase):
             system_apps.mkdir(parents=True)
             user_entry = user_apps / "termius.desktop"
             system_entry = system_apps / "termius.desktop"
-            user_entry.write_text("[Desktop Entry]\\nName=User Termius\\n", encoding="utf-8")
-            system_entry.write_text("[Desktop Entry]\\nName=Package Termius\\n", encoding="utf-8")
+            user_entry.write_text("[Desktop Entry]\nName=User Termius\n", encoding="utf-8")
+            system_entry.write_text("[Desktop Entry]\nName=Package Termius\n", encoding="utf-8")
             with patch.object(watcher, "DATA_HOME", root / "user"), patch.dict(
                 "os.environ", {"XDG_DATA_DIRS": str(root / "system")}
             ):
@@ -141,13 +141,13 @@ class WatcherTests(unittest.TestCase):
             root = Path(directory)
             source, target = root / "source.desktop", root / "target.desktop"
             state = root / "state"
-            source.write_text("[Desktop Entry]\\nName=Updated App\\nIcon=updated-icon\\nExec=updated-command %U\\n", encoding="utf-8")
+            source.write_text("[Desktop Entry]\nName=Updated App\nIcon=updated-icon\nExec=updated-command %U\n", encoding="utf-8")
             target.write_text(
-                "[Desktop Entry]\\nName=My renamed App\\nIcon=/home/user/custom.png\\nExec=old-command\\n"
-                "Actions=NoctaliaChangeIcon;NoctaliaRename;NoctaliaReset;\\n"
-                "\\n[Desktop Action NoctaliaChangeIcon]\\nName=Change icon\\n"
-                "\\n[Desktop Action NoctaliaRename]\\nName=Rename\\n"
-                "\\n[Desktop Action NoctaliaReset]\\nName=Reset appearance\\n",
+                "[Desktop Entry]\nName=My renamed App\nIcon=/home/user/custom.png\nExec=old-command\n"
+                "Actions=NoctaliaChangeIcon;NoctaliaRename;NoctaliaReset;\n"
+                "\n[Desktop Action NoctaliaChangeIcon]\nName=Change icon\n"
+                "\n[Desktop Action NoctaliaRename]\nName=Rename\n"
+                "\n[Desktop Action NoctaliaReset]\nName=Reset appearance\n",
                 encoding="utf-8",
             )
             state.mkdir()
@@ -169,11 +169,11 @@ class WatcherTests(unittest.TestCase):
             root = Path(directory)
             source, target = root / "source.desktop", root / "target.desktop"
             state = root / "state"
-            source.write_text("[Desktop Entry]\\nName=New Name\\nIcon=new-icon\\nExec=new-command\\n", encoding="utf-8")
+            source.write_text("[Desktop Entry]\nName=New Name\nIcon=new-icon\nExec=new-command\n", encoding="utf-8")
             target.write_text(
-                "[Desktop Entry]\\nName=Old Name\\nIcon=old-icon\\nExec=old-command\\n"
-                "Actions=NoctaliaChangeIcon;NoctaliaRename;NoctaliaReset;\\n"
-                "\\n[Desktop Action NoctaliaReset]\\nName=Reset\\n",
+                "[Desktop Entry]\nName=Old Name\nIcon=old-icon\nExec=old-command\n"
+                "Actions=NoctaliaChangeIcon;NoctaliaRename;NoctaliaReset;\n"
+                "\n[Desktop Action NoctaliaReset]\nName=Reset\n",
                 encoding="utf-8",
             )
             state.mkdir()
@@ -189,8 +189,8 @@ class WatcherTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             source, target = root / "source.desktop", root / "target.desktop"
-            source.write_text("[Desktop Entry]\\nName=New\\n", encoding="utf-8")
-            target.write_text("[Desktop Entry]\\nName=User replacement\\n", encoding="utf-8")
+            source.write_text("[Desktop Entry]\nName=New\n", encoding="utf-8")
+            target.write_text("[Desktop Entry]\nName=User replacement\n", encoding="utf-8")
             with patch.object(watcher, "LOG", root / "watcher.log"):
                 self.assertFalse(watcher.sync_managed_launcher(source, target, "target.desktop"))
             link = root / "link.desktop"
