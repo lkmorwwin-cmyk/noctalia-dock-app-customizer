@@ -79,9 +79,14 @@ def remove_actions_for(filename: str) -> None:
         log("Could not run customizer cleanup for " + filename + ": " + str(exc))
 
 def normalize_id(app_id: str) -> str:
+    """Convert a pinned application ID to its desktop filename.
+
+    Pinned values are application IDs, not filenames. An ID such as
+    org.telegram.desktop therefore becomes org.telegram.desktop.desktop.
+    """
     if not app_id or app_id in {".", ".."} or "/" in app_id or "\\" in app_id:
         raise ValueError("Invalid pinned application ID: " + repr(app_id))
-    return app_id if app_id.endswith(".desktop") else app_id + ".desktop"
+    return app_id + ".desktop"
 
 def data_directories() -> list[Path]:
     configured = os.environ.get("XDG_DATA_DIRS")
@@ -90,8 +95,9 @@ def data_directories() -> list[Path]:
              Path("/usr/local/share"), Path("/usr/share")]
     return list(dict.fromkeys(paths))
 
-def find_desktop(app_id: str) -> Path | None:
-    filename = normalize_id(app_id)
+def find_desktop(filename: str) -> Path | None:
+    if not filename.endswith(".desktop") or "/" in filename or "\\" in filename:
+        return None
     for directory in data_directories():
         root = directory / "applications"
         direct = root / filename
