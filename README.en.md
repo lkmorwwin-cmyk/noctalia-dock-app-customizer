@@ -71,7 +71,7 @@ The utility uses standard **Desktop Actions**. It creates user-level launcher co
 2. Locates the corresponding system `.desktop` launchers, including Flatpak-exported entries through validated symlinks.
 3. Creates user-level copies in `~/.local/share/applications`.
 4. Adds actions for changing the icon, renaming, and resetting.
-5. A background service tracks changes to the pinned-app list.
+5. A background service tracks changes to the pinned-app list and periodically checks source launchers for package updates.\n6. When a package updates, the managed copy receives new source fields while preserving the user's custom name, icon, and Desktop Actions.
 
 > [!NOTE]
 > This is an independent community utility — not an official Noctalia plugin and not a modification of Noctalia's source code.
@@ -100,7 +100,7 @@ Security-focused tests cover, among other things:
 <details>
 <summary><strong>Verification snapshot — November 17, 2026</strong></summary>
 
-- **15 of 15 tests** passed.
+- **21 of 21 tests** passed.
 - Python compilation completed successfully.
 - Shell syntax checks passed for both scripts.
 - Installation and restart of the user service completed successfully on CachyOS.
@@ -109,7 +109,7 @@ Security-focused tests cover, among other things:
 
 ## ⚡ Performance and resource usage
 
-The watcher is designed for continuous background operation with a small resource footprint. It monitors Noctalia settings and synchronizes when changes are detected, rather than continuously recreating launcher files.
+The watcher is designed for continuous background operation with a small resource footprint. It reacts immediately to Noctalia settings changes and checks pinned apps' source launchers for package updates every 60 seconds. It does not rewrite files when no source changes are detected.
 
 **Measured snapshot on CachyOS · November 17, 2026**
 
@@ -167,7 +167,7 @@ The watcher log rotates at 256 KiB and keeps one previous copy.
 - The Dock may take a moment to refresh after a launcher changes.
 - Flatpak, Snap, and non-standard installation methods need separate verification.
 - Compatibility with every Noctalia version and Linux distribution is not yet guaranteed.
-- Flatpak-exported launchers may be symlinks: the watcher accepts only links from the standard Flatpak exports directory whose targets remain inside the Flatpak installation's `app` directory.
+- Flatpak-exported launchers may be symlinks: the watcher accepts only links from the standard Flatpak exports directory whose targets remain inside that installation's `app` directory.\n- Managed copies periodically receive updated package source fields while preserving custom names and icons saved through the Customizer. Verified with Bottles (Flatpak), Happ (AUR/yay), and Termius (AUR package with a user-level launcher).
 - If an application already has a user-level desktop entry, the utility adds actions to it. That file is not treated as a watcher-created copy and is not automatically removed.
 
 ## 🗺️ Roadmap
