@@ -1,3 +1,4 @@
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -8,6 +9,18 @@ from src import noctalia_dock_watch as watcher
 
 
 class DesktopEntryTests(unittest.TestCase):
+    def test_locale_selects_russian_or_english(self):
+        with patch.dict(os.environ, {"LC_ALL": "ru_RU.UTF-8"}, clear=True):
+            self.assertTrue(customize.is_russian())
+            self.assertEqual(customize.tr("Rename", "Переименовать"), "Переименовать")
+        with patch.dict(os.environ, {"LC_ALL": "en_US.UTF-8"}, clear=True):
+            self.assertFalse(customize.is_russian())
+            self.assertEqual(customize.tr("Rename", "Переименовать"), "Rename")
+
+    def test_language_falls_back_to_lang(self):
+        with patch.dict(os.environ, {"LANG": "ru_RU.UTF-8"}, clear=True):
+            self.assertTrue(customize.is_russian())
+
     def test_filename_preserves_normalized_desktop_filename(self):
         # The customizer receives a filename from the watcher, not a raw app ID.
         self.assertEqual(customize.filename_for("org.telegram.desktop.desktop"), "org.telegram.desktop.desktop")
