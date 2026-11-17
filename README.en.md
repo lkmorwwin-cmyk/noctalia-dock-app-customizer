@@ -35,13 +35,13 @@
 ```bash
 git clone https://github.com/lkmorwwin-cmyk/noctalia-dock-app-customizer.git
 cd noctalia-dock-app-customizer
-./scripts/install.sh
+bash scripts/install.sh
 ```
 
 To uninstall:
 
 ```bash
-./scripts/uninstall.sh
+bash scripts/uninstall.sh
 ```
 
 ## 🧩 How it works
@@ -57,7 +57,7 @@ The utility uses standard **Desktop Actions**. It creates user-level launcher co
 > [!NOTE]
 > This is an independent community utility, not an official Noctalia plugin and not a modification of Noctalia's source code.
 
-## 🔍 Service and logs
+## 🧪 Tests\n\nRun the test suite from the repository root:\n\n```bash\npython3 -m unittest discover -s tests -v\n```\n\n## 🔍 Service and logs
 
 ```bash
 systemctl --user status noctalia-dock-watch.service
