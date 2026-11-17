@@ -42,6 +42,9 @@
 | 🧹 **Careful cleanup** | Remove only recognized launcher copies created by this utility |
 | 🌐 **Two languages** | Automatically select Russian or English |
 | 🔁 **Background operation** | Run as a systemd user service |
+| 📦 **Launcher refresh** | Check package launcher changes every 60 seconds while preserving custom appearance |
+
+![Noctalia Dock context menu showing Change icon, Rename, and Reset appearance](noctalia-dock-context-menu.png)
 
 ## 🚀 Installation and removal
 
@@ -92,6 +95,8 @@ Security-focused tests cover, among other things:
 
 - refusing to delete a replaced or unrecognized launcher;
 - refusing to delete or follow arbitrary symlinks placed in place of a managed launcher;
+- safely resolving validated Flatpak export symlinks;
+- refreshing package source fields while preserving user-customized names and icons;
 - accepting only validated Flatpak export symlinks that resolve inside an installed app directory;
 - preserving user-level desktop-entry priority over system launchers;
 - rejecting unsafe paths and malformed manifest data;
@@ -166,10 +171,10 @@ The watcher log rotates at 256 KiB and keeps one previous copy.
 - Menu actions depend on the Dock supporting Desktop Actions.
 - This is not a universal context-menu extension API.
 - The Dock may take a moment to refresh after a launcher changes.
-- Flatpak, Snap, and non-standard installation methods need separate verification.
+- Snap and non-standard installation methods still need separate verification. Snap CLI and snapd were not installed on the tested system.
 - Compatibility with every Noctalia version and Linux distribution is not yet guaranteed.
 - Flatpak-exported launchers may be symlinks: the watcher accepts only links from the standard Flatpak exports directory whose targets remain inside that installation's `app` directory.
-- Managed copies periodically receive updated package source fields while preserving custom names and icons saved through the Customizer. Verified with Bottles (Flatpak), Happ (AUR/yay), and Termius (AUR package with a user-level launcher).
+- Managed copies periodically receive updated package source fields while preserving custom names and icons saved through the Customizer. Launcher discovery and managed-copy creation were verified with Bottles (Flatpak) and Happ (AUR/yay). User-level launcher priority was verified with Termius. Actual synchronization during a real package upgrade is covered by automated tests, but has not yet been observed during an installed-app upgrade.
 - If an application already has a user-level desktop entry, the utility adds actions to it. That file is not treated as a watcher-created copy and is not automatically removed.
 
 ## 🗺️ Roadmap
@@ -180,7 +185,8 @@ The watcher log rotates at 256 KiB and keeps one previous copy.
 - [x] Add automatic Russian and English interface selection.
 - [x] Harden manifest validation and managed-launcher cleanup.
 - [x] Document security checks and measured resource usage.
-- [ ] Verify apps installed through Flatpak, Snap, and AUR (including yay).
+- [x] Verify launcher discovery for Bottles (Flatpak) and Happ (AUR via yay), and user-launcher priority for Termius.
+- [ ] Verify apps installed through Snap.
 - [ ] Test more distributions and Noctalia versions.
 - [ ] Publish the first stable release.
 
