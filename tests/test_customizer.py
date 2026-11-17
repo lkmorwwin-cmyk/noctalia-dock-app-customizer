@@ -85,6 +85,57 @@ class WatcherTests(unittest.TestCase):
             with patch.object(watcher, "DATA_HOME", root), patch.dict("os.environ", {"XDG_DATA_DIRS": directory}):
                 self.assertEqual(watcher.find_desktop("org.example.App.desktop"), target)
 
+    def test_finds_flatpak_export_symlink_safely(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            flatpak = root / "flatpak"
+            export_apps = flatpak / "exports/share/applications"
+            target_apps = flatpak / "app/com.example.App/x86_64/stable/commit/export/share/applications"
+            export_apps.mkdir(parents=True)
+            target_apps.mkdir(parents=True)
+            target = target_apps / "com.example.App.desktop"
+            target.write_text("[Desktop Entry]\\nName=Flatpak Example\\n", encoding="utf-8")
+            exported = export_apps / target.name
+            exported.symlink_to(Path("../../../app/com.example.App/current/active/export/share/applications") / target.name)
+            current = flatpak / "app/com.example.App/current"
+            current.symlink_to("x86_64/stable")
+            active = flatpak / "app/com.example.App/x86_64/stable/active"
+            active.symlink_to("commit")
+            data_home = root / "home-data"
+            with patch.object(watcher, "DATA_HOME", data_home), patch.dict(
+                "os.environ", {"XDG_DATA_DIRS": str(flatpak / "exports/share")}
+            ):
+                self.assertEqual(watcher.find_desktop(target.name), target)
+
+    def test_rejects_symlink_outside_flatpak_export(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            apps = root / "applications"
+            apps.mkdir()
+            outside = root / "outside.desktop"
+            outside.write_text("[Desktop Entry]\\nName=Outside\\n", encoding="utf-8")
+            (apps / "sample.desktop").symlink_to(outside)
+            with patch.object(watcher, "DATA_HOME", root), patch.dict(
+                "os.environ", {"XDG_DATA_DIRS": ""}
+            ):
+                self.assertIsNone(watcher.find_desktop("sample.desktop"))
+
+    def test_user_desktop_override_has_priority_over_system_launcher(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            user_apps = root / "user/applications"
+            system_apps = root / "system/applications"
+            user_apps.mkdir(parents=True)
+            system_apps.mkdir(parents=True)
+            user_entry = user_apps / "termius.desktop"
+            system_entry = system_apps / "termius.desktop"
+            user_entry.write_text("[Desktop Entry]\\nName=User Termius\\n", encoding="utf-8")
+            system_entry.write_text("[Desktop Entry]\\nName=Package Termius\\n", encoding="utf-8")
+            with patch.object(watcher, "DATA_HOME", root / "user"), patch.dict(
+                "os.environ", {"XDG_DATA_DIRS": str(root / "system")}
+            ):
+                self.assertEqual(watcher.find_desktop("termius.desktop"), user_entry)
+
     def test_manifest_rejects_paths_and_non_list_data(self):
         with tempfile.TemporaryDirectory() as directory:
             manifest = Path(directory) / "manifest.json"
