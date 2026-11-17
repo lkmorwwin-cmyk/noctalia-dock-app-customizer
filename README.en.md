@@ -2,36 +2,50 @@
 
 # Noctalia Dock App Customizer
 
-### Make every pinned app feel like yours.
+**Make every pinned app feel like yours.**
 
 [🇷🇺 Русский](README.ru.md) · [🇬🇧 English](README.en.md)
 
 ![Linux](https://img.shields.io/badge/platform-Linux-2ea44f?style=flat-square&logo=linux&logoColor=white)
 ![Noctalia](https://img.shields.io/badge/desktop-Noctalia-7c3aed?style=flat-square)
+![Python](https://img.shields.io/badge/Python-3.11%2B-3776ab?style=flat-square&logo=python&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-2563eb?style=flat-square)
 ![Status](https://img.shields.io/badge/status-public%20testing-f59e0b?style=flat-square)
 
-**A lightweight utility for changing application icons and names in Noctalia Dock.**
+*A small, focused utility for customizing application icons and names in Noctalia Dock.*
 
 </div>
 
 ---
 
+## Contents
+
+- [Features](#-features)
+- [Installation](#-installation-and-removal)
+- [Interface language](#-interface-language)
+- [How it works](#-how-it-works)
+- [Tests](#-tests-and-verification)
+- [Performance](#-performance-and-resource-usage)
+- [Service and logs](#-service-and-logs)
+- [Safety](#-safety)
+- [Limitations](#️-limitations-and-compatibility)
+- [Roadmap](#-roadmap)
+
 ## ✨ Features
 
-| Action | Result |
+| Feature | Description |
 |:--|:--|
-| 🖼️ **Change icon** | Pick an image using a graphical file dialog |
+| 🖼️ **Change icon** | Choose a custom image using a graphical file dialog |
 | ✏️ **Rename** | Set a custom display name |
 | ↩️ **Reset appearance** | Restore the original name and icon |
-| ⚙️ **Automatic tracking** | Watch the pinned application list |
-| 🧹 **Careful cleanup** | Remove only launcher copies created by this utility |
-| 🌐 **Bilingual interface** | Automatically select Russian or English from the desktop locale |
+| ⚙️ **Automatic tracking** | Synchronize with the pinned application list |
+| 🧹 **Careful cleanup** | Remove only recognized launcher copies created by this utility |
+| 🌐 **Two languages** | Automatically select Russian or English |
 | 🔁 **Background operation** | Run as a systemd user service |
 
-## 🚀 Quick installation
+## 🚀 Installation and removal
 
-**Requirements:** Linux, Noctalia, Python 3.11+, and a systemd user session. Zenity is required for graphical dialogs.
+**Requirements:** Linux, Noctalia, Python 3.11+, a systemd user session. Zenity is required for graphical dialogs.
 
 ```bash
 git clone https://github.com/lkmorwwin-cmyk/noctalia-dock-app-customizer.git
@@ -47,7 +61,7 @@ bash scripts/uninstall.sh
 
 ## 🌐 Interface language
 
-The context-menu actions, dialogs, and notifications automatically follow the desktop session locale: `ru` selects Russian, while all other locales use English. No separate language package or manual setting is required.
+Context-menu actions, dialogs, and notifications follow the desktop session locale automatically: `ru` selects Russian; all other locales use English. No extra language package or manual setting is required.
 
 ## 🧩 How it works
 
@@ -60,7 +74,7 @@ The utility uses standard **Desktop Actions**. It creates user-level launcher co
 5. A background service tracks changes to the pinned-app list.
 
 > [!NOTE]
-> This is an independent community utility, not an official Noctalia plugin and not a modification of Noctalia's source code.
+> This is an independent community utility — not an official Noctalia plugin and not a modification of Noctalia's source code.
 
 ## 🧪 Tests and verification
 
@@ -73,7 +87,7 @@ bash -n scripts/install.sh
 bash -n scripts/uninstall.sh
 ```
 
-The security-focused tests cover, among other things:
+Security-focused tests cover, among other things:
 
 - refusing to delete a replaced or unrecognized launcher;
 - refusing to delete or follow a symlink placed in place of a managed launcher;
@@ -81,23 +95,32 @@ The security-focused tests cover, among other things:
 - atomic JSON writes and private file permissions;
 - safe Desktop Actions cleanup.
 
-**Verification snapshot from November 17, 2026:** all 15 tests passed; Python compilation and shell syntax checks for both scripts succeeded. Installation and restart of the user service also completed successfully on CachyOS.
+<details>
+<summary><strong>Verification snapshot — November 17, 2026</strong></summary>
+
+- **15 of 15 tests** passed.
+- Python compilation completed successfully.
+- Shell syntax checks passed for both scripts.
+- Installation and restart of the user service completed successfully on CachyOS.
+
+</details>
 
 ## ⚡ Performance and resource usage
 
-The watcher is designed for continuous background operation and should have a very small idle footprint. It checks for changes to Noctalia settings and performs synchronization when a change is detected, rather than continuously recreating launcher files.
+The watcher is designed for continuous background operation with a small resource footprint. It monitors Noctalia settings and synchronizes when changes are detected, rather than continuously recreating launcher files.
 
-**Measured snapshot on CachyOS (November 17, 2026):**
+**Measured snapshot on CachyOS · November 17, 2026**
 
 | Metric | Result |
 |:--|--:|
-| systemd service memory | about 7.8 MiB |
-| service tasks/threads | 1 |
-| cumulative CPU time at the time of sampling | about 0.48 seconds |
+| systemd service memory | **≈ 7.8 MiB** |
+| service tasks/threads | **1** |
+| cumulative CPU time at sampling | **≈ 0.48 s** |
 
-This is a single measurement taken shortly after the service started, not a long-duration benchmark or a guarantee for every system. Actual usage depends on the environment, number of pinned applications, and how often settings change.
+> [!IMPORTANT]
+> This is a single measurement taken shortly after startup, not a long-duration benchmark or a guarantee for every system. Actual usage depends on the environment, number of pinned apps, and how often settings change.
 
-You can inspect the values on your own system with:
+Inspect the values on your own system:
 
 ```bash
 systemctl --user show noctalia-dock-watch.service \
@@ -107,8 +130,13 @@ systemctl --user show noctalia-dock-watch.service \
 ## 🔍 Service and logs
 
 ```bash
+# Service status
 systemctl --user status noctalia-dock-watch.service
+
+# Follow the systemd journal
 journalctl --user -u noctalia-dock-watch.service -f
+
+# Follow the utility log
 tail -f ~/.local/state/noctalia-dock-watch.log
 ```
 
@@ -117,12 +145,12 @@ The watcher log rotates at 256 KiB and keeps one previous copy.
 ## 🛡️ Safety
 
 - System desktop-entry files are not modified.
-- Created launcher copies are recorded in a manifest.
+- Watcher-created launcher copies are recorded in a manifest.
 - Unpin cleanup removes only recognized files owned by this utility.
 - Replaced, unrecognized, and symlink launcher paths are preserved.
 - Manifest paths and data structure are validated.
 - State JSON files are written atomically with private file permissions.
-- Existing user-level desktop entries are never deleted by the watcher.
+- Existing user-level desktop entries are not deleted by the watcher.
 - Uninstallation leaves logs and unrelated user data untouched.
 
 ## ⚠️ Limitations and compatibility
@@ -132,11 +160,11 @@ The watcher log rotates at 256 KiB and keeps one previous copy.
 - The Dock may take a moment to refresh after a launcher changes.
 - Flatpak, Snap, and non-standard installation methods need separate verification.
 - Compatibility with every Noctalia version and Linux distribution is not yet guaranteed.
-- If an application already has a user-level desktop entry, the utility adds actions to it; that file is not treated as a watcher-created copy and is not automatically removed.
+- If an application already has a user-level desktop entry, the utility adds actions to it. That file is not treated as a watcher-created copy and is not automatically removed.
 
 ## 🗺️ Roadmap
 
-- [x] Move the watcher and customizer into standalone source files.
+- [x] Split the watcher and customizer into standalone source files.
 - [x] Add installation and uninstallation scripts.
 - [x] Add automated tests.
 - [x] Add automatic Russian and English interface selection.
@@ -148,11 +176,13 @@ The watcher log rotates at 256 KiB and keeps one previous copy.
 
 ## 🤝 Contributing
 
-Bug reports and suggestions are welcome. Include your distribution, Noctalia version, application installation method, launcher ID, and a relevant log excerpt with personal data removed.
+Bug reports and suggestions are welcome. Before opening an Issue, check existing reports and include your distribution, Noctalia version, application installation method, launcher ID, and a relevant log excerpt with personal data removed.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines and pull request expectations.
 
 ## 📄 License
 
-[MIT](LICENSE).
+Distributed under the [MIT License](LICENSE).
 
 ---
 
